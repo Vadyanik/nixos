@@ -61,7 +61,7 @@ if [ -n "$CORE_CHANGED" ]; then
 
             sed -i "s|^!\[Rebuilds Per Day\].*|![Rebuilds Per Day](https://img.shields.io/badge/Avg%20Rebuilds%2FDay-${AVG_REBUILDS}-orange?style=flat-square)|" "$README_FILE"
 
-            sed -i "s|^!\[Last Rebuild\].*|![Last Rebuild](https://img.shields.io/badge/Last%20Update-${LAST_REBUILD_TIME}-green?style=flat-square)|" "$README_FILE"
+            sed -i "s|^!\[Last Rebuild\].*|![Last Rebuild](https://img.shields.io/badge/Last%20Update-${LAST_REBUILD_TIME}-green?style=flat-square\&labelColor=black\&color=black)|" "$README_FILE"
 
             # Возвращаем права владельцу
             chown "$REAL_USER:users" "$README_FILE"

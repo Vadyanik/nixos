@@ -107,8 +107,6 @@ in
      zed-editor
      inputs.zen-browser.packages.${stdenv.hostPlatform.system}.default
      jq
-     kdePackages.kate
-     kdePackages.dolphin
      hyprpaper
      zenity
      (prismlauncher.override {

@@ -94,7 +94,6 @@ in
      pavucontrol
      discord
      easyeffects
-     inputs.awww.packages.${pkgs.stdenv.hostPlatform.system}.awww
      grim 
      slurp 
      wl-clipboard

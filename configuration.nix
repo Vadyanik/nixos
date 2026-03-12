@@ -93,6 +93,7 @@ in
      librewolf
      pavucontrol
      discord
+     bc
      easyeffects
      grim 
      slurp 

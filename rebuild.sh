@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# --- CONFIGURATION ---
+PROFILE_REPO_PATH="$HOME/dev/Vadyanik" # Укажи здесь путь к локальной папке твоего профиля (где README.md)
+# ---------------------
+
 REAL_USER=${SUDO_USER:-$(whoami)}
 USER_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
 
@@ -27,9 +31,32 @@ CORE_CHANGED=$(git diff --cached --name-only | grep -E 'flake.nix|configuration.
 
 if [ -n "$CORE_CHANGED" ]; then
     echo "Core changes detected ($CORE_CHANGED). Rebuilding..."
-    
+
     if sudo nixos-rebuild switch --flake . --quiet; then
-        echo "Rebuild successful. Committing..."
+        echo "Rebuild successful. Updating counter..."
+        
+        if [ -d "$PROFILE_REPO_PATH" ]; then
+            README_FILE="$PROFILE_REPO_PATH/README.md"
+            # Извлекаем текущее число из бейджа, увеличиваем на 1
+            CURRENT_COUNT=$(grep -oP 'System%20Rebuilds-\K[0-9]+' "$README_FILE")
+            NEW_COUNT=$((CURRENT_COUNT + 1))
+            
+            # Заменяем старое число на новое в файле
+            sed -i "s/System%20Rebuilds-$CURRENT_COUNT/System%20Rebuilds-$NEW_COUNT/" "$README_FILE"
+            
+            # Пушим изменения в репозиторий профиля
+            pushd "$PROFILE_REPO_PATH" > /dev/null
+            git add README.md
+            git commit -m "profile: update rebuild counter to $NEW_COUNT" --quiet
+            sudo GIT_SSH_COMMAND="ssh -i $USER_HOME/.ssh/id_ed25519 -o IdentitiesOnly=yes" \
+                 git push origin main --quiet
+            popd > /dev/null
+            echo "Counter updated to $NEW_COUNT."
+        else
+            echo "Warning: Profile repo path not found at $PROFILE_REPO_PATH"
+        fi
+
+        echo "Committing nixos config..."
         sudo git commit -m "rebuild: $(date +'%Y-%m-%d %H:%M:%S')" --quiet
         sudo GIT_SSH_COMMAND="ssh -i $USER_HOME/.ssh/id_ed25519 -o IdentitiesOnly=yes" \
              git push origin main --force

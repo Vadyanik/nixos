@@ -5,16 +5,13 @@ PROFILE_REPO_PATH="/home/vadyanik/dev/Vadyanik"
 BIRTH_DATE="2026-02-13"
 # ---------------------
 
-# Определяем реального пользователя и его окружение
 REAL_USER=${SUDO_USER:-$(whoami)}
 USER_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
 
-# Принудительная локаль C (точка в дробях, английский формат)
 export LC_ALL=C
 
 cd /etc/nixos || exit
 
-# Настройка Git для системного конфига
 sudo git config --global --add safe.directory /etc/nixos
 USER_NAME=$(sudo -u "$REAL_USER" git config --global user.name)
 USER_EMAIL=$(sudo -u "$REAL_USER" git config --global user.email)
@@ -41,15 +38,14 @@ if [ -n "$CORE_CHANGED" ]; then
             README_FILE="$PROFILE_REPO_PATH/README.md"
             pushd "$PROFILE_REPO_PATH" > /dev/null
 
-            # Синхронизация профиля
             sudo -u "$REAL_USER" git pull origin main --quiet
 
-            # 1. Считаем общее количество (парсим старое значение)
+            # 1. Считаем общее количество
             CURRENT_COUNT=$(grep -oP 'System%20Rebuilds-\K[0-9]+' "$README_FILE" | head -n 1)
             [ -z "$CURRENT_COUNT" ] && CURRENT_COUNT=0
             NEW_COUNT=$((CURRENT_COUNT + 1))
 
-            # 2. Считаем среднее (теперь точка гарантирована через LC_ALL=C)
+            # 2. Считаем среднее
             TODAY=$(date +%s)
             START=$(date -d "$BIRTH_DATE" +%s)
             DIFF_DAYS=$(( (TODAY - START) / 86400 ))
@@ -57,35 +53,19 @@ if [ -n "$CORE_CHANGED" ]; then
 
             AVG_REBUILDS=$(echo "scale=1; $NEW_COUNT / $DIFF_DAYS" | bc | awk '{printf "%.1f", $0}')
 
-            # 3. Время последнего ребилда
-            LAST_REBUILD_TIME=$(date +'%Y--%m--%d%20%H:%M')
+            # 3. Время (используем %% чтобы date вывел ровно один символ % без пробелов)
+            LAST_REBUILD_TIME=$(date +'%Y--%m--%d%%20%H:%M')
 
-            # 4. Обновляем README (Исправленная логика AWK)
-            awk -v count="$NEW_COUNT" -v avg="$AVG_REBUILDS" -v time="$LAST_REBUILD_TIME" '
-            BEGIN { done = 0 }
-            // {
-                if (!done) {
-                    print ""
-                    print "![Rebuilds](https://img.shields.io/badge/System%20Rebuilds-" count "-blue?style=flat-square&logo=nixos)"
-                    print "![Rebuilds Per Day](https://img.shields.io/badge/Avg%20Rebuilds%2FDay-" avg "-orange?style=flat-square)"
-                    print "![Last Rebuild](https://img.shields.io/badge/Last%20Rebuild-" time "-green?style=flat-square)"
-                    print ""
-                    done = 1
-                }
-                skip = 1
-                next
-            }
-            // {
-                skip = 0
-                next
-            }
-            !skip { print }
-            ' "$README_FILE" > "${README_FILE}.tmp"
+            # 4. Обновляем README точечно через sed (меняем только 3 конкретные строки)
+            sed -i "s|^!\[Rebuilds\].*|![Rebuilds](https://img.shields.io/badge/System%20Rebuilds-${NEW_COUNT}-blue?style=flat-square\&logo=nixos)|" "$README_FILE"
 
-            mv "${README_FILE}.tmp" "$README_FILE"
+            sed -i "s|^!\[Rebuilds Per Day\].*|![Rebuilds Per Day](https://img.shields.io/badge/Avg%20Rebuilds%2FDay-${AVG_REBUILDS}-orange?style=flat-square)|" "$README_FILE"
+
+            sed -i "s|^!\[Last Rebuild\].*|![Last Rebuild](https://img.shields.io/badge/Last%20Rebuild-${LAST_REBUILD_TIME}-green?style=flat-square)|" "$README_FILE"
+
+            # Возвращаем права владельцу
             chown "$REAL_USER:users" "$README_FILE"
 
-            # Пушим в профиль
             sudo -u "$REAL_USER" git add README.md
             sudo -u "$REAL_USER" git commit -m "profile: rebuild #$NEW_COUNT ($AVG_REBUILDS/day)" --quiet
             sudo -u "$REAL_USER" GIT_SSH_COMMAND="ssh -i $USER_HOME/.ssh/id_ed25519 -o IdentitiesOnly=yes" \
@@ -95,7 +75,6 @@ if [ -n "$CORE_CHANGED" ]; then
             echo "Stats updated: Total $NEW_COUNT, Avg $AVG_REBUILDS/day"
         fi
 
-        # Коммит самого конфига (/etc/nixos)
         sudo git commit -m "rebuild: $(date +'%Y-%m-%d %H:%M:%S')" --quiet
         sudo GIT_SSH_COMMAND="ssh -i $USER_HOME/.ssh/id_ed25519 -o IdentitiesOnly=yes" \
              git push origin main --force

@@ -1,22 +1,16 @@
-#Edit this configuration file to define what should be installed on
-# your system.  Help is available in the configuration.nix(5) man page
-# and in the NixOS manual (accessible by running ‘nixos-help’).
-
 { config, pkgs, inputs, ... }:
 
 let
-  # Объявляем переменную здесь, до основного блока конфигурации
   spicePkgs = inputs.spicetify-nix.legacyPackages.${pkgs.stdenv.system};
 in
 {
   imports =
-    [ # Include the results of the hardware scan.
+    [
       ./hardware-configuration.nix
     ];
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
-  # Bootloader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
@@ -48,13 +42,11 @@ in
     LC_TIME = "uk_UA.UTF-8";
   };
 
-  # Configure keymap in X11
   services.xserver.xkb = {
     layout = "us";
     variant = "";
   };
 
-  # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.vadyanik = {
     isNormalUser = true;
     description = "vadyanik";
@@ -86,16 +78,14 @@ in
       beautifulLyrics
     ];
     enabledCustomApps = with spicePkgs.apps; [
-      lyricsPlus  # Бонусом: очень крутые тексты песен
+      lyricsPlus
       ncsVisualizer
     ];
   };
 
   programs.steam.enable = true;
-  # List packages installed in system profile. To search, run:
-  # $ nix search wget
   environment.systemPackages = with pkgs; [
-     neovim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
+     neovim
      ghostty
      git
      kitty
@@ -120,14 +110,11 @@ in
      kdePackages.kate
      kdePackages.dolphin
      hyprpaper
-     zenity # чтобы рисовались окошки с ошибками, а не вис терминал
+     zenity
      (prismlauncher.override {
     additionalLibs = with pkgs; [
-      # Базовые графические и системные либы
       nspr nss mesa libdrm libgbm
-      # Тяжелая артиллерия для браузера (CEF)
       expat alsa-lib cups dbus glib pango atk
-      # Иксы (X11)
       libx11 libxcomposite libxdamage 
       libxrandr libxcb libxext libxfixes
       libxkbcommon cairo gtk3
@@ -147,7 +134,6 @@ networking.firewall.trustedInterfaces = [ "ham0" ];
 
   programs.nix-ld = {
     enable = true;
-    # Подкидываем этому загрузчику те же библиотеки, что мы давали лаунчеру
     libraries = with pkgs; [
       nspr nss mesa libdrm libgbm
       expat alsa-lib cups dbus glib pango atk
@@ -170,7 +156,7 @@ networking.firewall.trustedInterfaces = [ "ham0" ];
     enable = true;
     alsa.enable = true;
     alsa.support32Bit = true;
-    pulse.enable = true;   # provides PulseAudio compatibility
+    pulse.enable = true;
     jack.enable = true;
   };
 

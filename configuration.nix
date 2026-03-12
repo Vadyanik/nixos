@@ -86,6 +86,7 @@ in
      librewolf
      pavucontrol
      discord
+     cava
      bc
      easyeffects
      grim 

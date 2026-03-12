@@ -10,15 +10,15 @@ sudo git config --global --add safe.directory /etc/nixos
 # 2. Добавляем файлы
 sudo git add .
 
-# 3. Инициализируем первый коммит, если репозиторий пустой (исправляет ошибку HEAD)
-if ! sudo git rev-parse --verify HEAD >/dev/null 2>&1; then
-    sudo git commit -m "initial commit" --quiet
+# 4. Делаем коммит изменений, чтобы скрыть ворнинг "dirty tree"
+
+if ! sudo git diff-index --quiet HEAD; then
+    echo "📝 Обнаружены изменения, создаю коммит..."
+    sudo git commit -m "rebuild: $(date +'%Y-%m-%d %H:%M:%S')"
+else
+    echo "☕ Изменений в конфигурации нет, пропускаю коммит."
 fi
 
-# 4. Делаем коммит изменений, чтобы скрыть ворнинг "dirty tree"
-if ! sudo git diff-index --quiet HEAD; then
-    sudo git commit -m "rebuild: $(date +'%Y-%m-%d %H:%M:%S')" --quiet
-fi
 
 echo "🚀 Начинаю тихую пересборку NixOS..."
 
@@ -31,3 +31,7 @@ else
     echo "❌ Ошибка при пересборке."
     exit 1
 fi
+
+# Добавьте это в конец скрипта
+echo "📊 Последний коммит в истории:"
+git log -1 --oneline

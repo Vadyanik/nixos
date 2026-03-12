@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 
-# --- CONFIGURATION ---
-PROFILE_REPO_PATH="$HOME/dev/Vadyanik" # Укажи здесь путь к локальной папке твоего профиля (где README.md)
-# ---------------------
+PROFILE_REPO_PATH="/home/vadyanik/dev/Vadyanik"
 
 REAL_USER=${SUDO_USER:-$(whoami)}
 USER_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
@@ -13,7 +11,6 @@ USER_EMAIL=$(sudo -u "$REAL_USER" git config --global user.email)
 
 cd /etc/nixos || exit
 
-# Use your identity, or fallback if not set
 sudo git config --global --add safe.directory /etc/nixos
 sudo git config user.name "${USER_NAME:-NixOS Rebuild Bot}"
 sudo git config user.email "${USER_EMAIL:-rebuild-bot@nixos.local}"

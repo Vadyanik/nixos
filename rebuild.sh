@@ -34,46 +34,51 @@ if [ -n "$CORE_CHANGED" ]; then
     if sudo nixos-rebuild switch --flake . --quiet; then
         echo "Rebuild successful. Calculating stats..."
 
-       if [ -d "$PROFILE_REPO_PATH" ]; then
-                   README_FILE="$PROFILE_REPO_PATH/README.md"
+        if [ -d "$PROFILE_REPO_PATH" ]; then
+                    README_FILE="$PROFILE_REPO_PATH/README.md"
 
-                   # Подтягиваем изменения на случай правок через браузер
-                   pushd "$PROFILE_REPO_PATH" > /dev/null
-                   git pull origin main --quiet
+                    # Все операции с Git внутри профиля делаем от имени пользователя
+                    pushd "$PROFILE_REPO_PATH" > /dev/null
 
-                   # 1. Считаем общее количество
-                   CURRENT_COUNT=$(grep -oP 'System%20Rebuilds-\K[0-9]+' "$README_FILE")
-                   # Если вдруг не нашли число, начнем с 1
-                   [ -z "$CURRENT_COUNT" ] && CURRENT_COUNT=0
-                   NEW_COUNT=$((CURRENT_COUNT + 1))
+                    # Синхронизация
+                    sudo -u "$REAL_USER" git pull origin main --quiet
 
-                   # 2. Считаем среднее
-                   TODAY=$(date +%s)
-                   START=$(date -d "$BIRTH_DATE" +%s)
-                   DIFF_DAYS=$(( (TODAY - START) / 86400 ))
-                   [ "$DIFF_DAYS" -lt 1 ] && DIFF_DAYS=1
+                    # 1. Считаем общее количество
+                    CURRENT_COUNT=$(grep -oP 'System%20Rebuilds-\K[0-9]+' "$README_FILE")
+                    [ -z "$CURRENT_COUNT" ] && CURRENT_COUNT=0
+                    NEW_COUNT=$((CURRENT_COUNT + 1))
 
-                   # Считаем через bc, если его нет — пишем "0"
-                   if command -v bc >/dev/null 2>&1; then
-                       AVG_REBUILDS=$(echo "scale=1; $NEW_COUNT / $DIFF_DAYS" | bc)
-                   else
-                       AVG_REBUILDS="0"
-                   fi
+                    # 2. Считаем среднее
+                    TODAY=$(date +%s)
+                    START=$(date -d "$BIRTH_DATE" +%s)
+                    DIFF_DAYS=$(( (TODAY - START) / 86400 ))
+                    [ "$DIFF_DAYS" -lt 1 ] && DIFF_DAYS=1
 
-                   # 3. Время последнего ребилда (заменяем пробелы на %20 для URL)
-                   LAST_REBUILD_TIME=$(date +'%Y--%m--%d%20%H:%M')
+                    if command -v bc >/dev/null 2>&1; then
+                        AVG_REBUILDS=$(echo "scale=1; $NEW_COUNT / $DIFF_DAYS" | bc)
+                    else
+                        AVG_REBUILDS="0.1"
+                    fi
 
-                   # 4. Обновляем README (используем @ как разделитель в sed, чтобы не конфликтовать со слэшами)
-                   sed -i "//,//c\\n![Rebuilds](https://img.shields.io/badge/System%20Rebuilds-$NEW_COUNT-blue?style=flat-square&logo=nixos)\n![Rebuilds Per Day](https://img.shields.io/badge/Avg%20Rebuilds%2FDay-$AVG_REBUILDS-orange?style=flat-square)\n![Last Rebuild](https://img.shields.io/badge/Last%20Rebuild-$LAST_REBUILD_TIME-green?style=flat-square)\n" "$README_FILE"
+                    # 3. Время последнего ребилда
+                    LAST_REBUILD_TIME=$(date +'%Y--%m--%d%20%H:%M')
 
-                   # Пушим в профиль
-                   git add README.md
-                   git commit -m "profile: rebuild #$NEW_COUNT ($AVG_REBUILDS/day)" --quiet
-                   sudo GIT_SSH_COMMAND="ssh -i $USER_HOME/.ssh/id_ed25519 -o IdentitiesOnly=yes" \
-                        git push origin main --quiet
-                   popd > /dev/null
-                   echo "Stats updated: Total $NEW_COUNT, Avg $AVG_REBUILDS/day"
-               fi
+                    # 4. Обновляем README
+                    # Используем временный файл, чтобы избежать проблем с правами sed
+                    NEW_STATS="\n![Rebuilds](https://img.shields.io/badge/System%20Rebuilds-$NEW_COUNT-blue?style=flat-square&logo=nixos)\n![Rebuilds Per Day](https://img.shields.io/badge/Avg%20Rebuilds%2FDay-$AVG_REBUILDS-orange?style=flat-square)\n![Last Rebuild](https://img.shields.io/badge/Last%20Rebuild-$LAST_REBUILD_TIME-green?style=flat-square)\n"
+
+                    # Используем perl вместо sed для замены блока, это надежнее с многострочным вводом
+                    sudo -u "$REAL_USER" perl -i -0777 -pe "s/.*?/$(echo $NEW_STATS)/s" "$README_FILE"
+
+                    # Пушим в профиль
+                    sudo -u "$REAL_USER" git add README.md
+                    sudo -u "$REAL_USER" git commit -m "profile: rebuild #$NEW_COUNT ($AVG_REBUILDS/day)" --quiet
+                    sudo -u "$REAL_USER" GIT_SSH_COMMAND="ssh -i $USER_HOME/.ssh/id_ed25519 -o IdentitiesOnly=yes" \
+                         git push origin main --quiet
+
+                    popd > /dev/null
+                    echo "Stats updated: Total $NEW_COUNT, Avg $AVG_REBUILDS/day"
+            fi
 
         # Коммит самого конфига
         sudo git commit -m "rebuild: $(date +'%Y-%m-%d %H:%M:%S')" --quiet

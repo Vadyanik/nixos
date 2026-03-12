@@ -45,23 +45,23 @@ if [ -n "$CORE_CHANGED" ]; then
             [ -z "$CURRENT_COUNT" ] && CURRENT_COUNT=0
             NEW_COUNT=$((CURRENT_COUNT + 1))
 
-            # 2. Считаем среднее
+            # 2. Считаем среднее (теперь с точностью до 2 знаков)
             TODAY=$(date +%s)
             START=$(date -d "$BIRTH_DATE" +%s)
             DIFF_DAYS=$(( (TODAY - START) / 86400 ))
             [ "$DIFF_DAYS" -lt 1 ] && DIFF_DAYS=1
 
-            AVG_REBUILDS=$(echo "scale=1; $NEW_COUNT / $DIFF_DAYS" | bc | awk '{printf "%.1f", $0}')
+            AVG_REBUILDS=$(echo "scale=2; $NEW_COUNT / $DIFF_DAYS" | bc | awk '{printf "%.2f", $0}')
 
-            # 3. Время (используем %% чтобы date вывел ровно один символ % без пробелов)
-            LAST_REBUILD_TIME=$(date +'%Y--%m--%d%%20%H:%M')
+            # 3. Время (Новый формат: День.Месяц.Год Время)
+            LAST_REBUILD_TIME=$(date +'%d.%m.%Y%%20%H:%M')
 
-            # 4. Обновляем README точечно через sed (меняем только 3 конкретные строки)
+            # 4. Обновляем README точечно через sed
             sed -i "s|^!\[Rebuilds\].*|![Rebuilds](https://img.shields.io/badge/System%20Rebuilds-${NEW_COUNT}-blue?style=flat-square\&logo=nixos)|" "$README_FILE"
 
             sed -i "s|^!\[Rebuilds Per Day\].*|![Rebuilds Per Day](https://img.shields.io/badge/Avg%20Rebuilds%2FDay-${AVG_REBUILDS}-orange?style=flat-square)|" "$README_FILE"
 
-            sed -i "s|^!\[Last Rebuild\].*|![Last Rebuild](https://img.shields.io/badge/Last%20Rebuild-${LAST_REBUILD_TIME}-green?style=flat-square)|" "$README_FILE"
+            sed -i "s|^!\[Last Rebuild\].*|![Last Rebuild](https://img.shields.io/badge/Last%20Update-${LAST_REBUILD_TIME}-green?style=flat-square)|" "$README_FILE"
 
             # Возвращаем права владельцу
             chown "$REAL_USER:users" "$README_FILE"

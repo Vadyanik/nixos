@@ -132,7 +132,7 @@ in
      imagemagick  # для картинок
      shfmt        # для форматирования bash
      tree-sitter
-     nodejs_20
+    nodejs_22
   
      # --- ТВОЙ СПИСОК УЖЕ СОДЕРЖИТ МНОГОЕ, ДОБАВЬ ЭТО: ---
 

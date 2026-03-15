@@ -117,6 +117,20 @@ in
      mullvad-vpn
      logmein-hamachi
      haguichi
+     # Core
+     ripgrep
+     fd
+     lazygit
+     
+     # Mason / LSP requirements
+     nodejs_20
+     python3
+     wget
+     unzip
+     
+     # Optional
+     imagemagick  # для картинок
+     shfmt        # для форматирования bash
   ];
 
 virtualisation.libvirtd.enable = true;

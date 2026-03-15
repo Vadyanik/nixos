@@ -131,6 +131,40 @@ in
      # Optional
      imagemagick  # для картинок
      shfmt        # для форматирования bash
+     tree-sitter
+     nodejs_20
+  
+     # --- ТВОЙ СПИСОК УЖЕ СОДЕРЖИТ МНОГОЕ, ДОБАВЬ ЭТО: ---
+
+    # 1. Системные зависимости для плагинов Neovim
+    sqlite            # Критично для Snacks.picker (хранение истории и частоты файлов)
+    lua51Packages.luarocks
+    lua5_1
+    trash-cli         # Чтобы Snacks.explorer мог удалять файлы в корзину, а не навсегда
+    ghostscript       # Для отображения PDF в Neovim через Snacks.image
+    ast-grep          # Для умного структурного поиска в grug-far
+    
+    # 2. Окружение для Mason (чтобы ставилось вообще всё)
+    python311Packages.python-lsp-server # Базовый LSP для питона
+    python311Packages.pip               # Чтобы Mason мог доставлять пакеты сам
+    nodePackages.npm                    # Важно для большинства LSP (JS, TS, CSS, Tailwind)
+    go                                  # Даже если не пишешь на Go, многие инструменты на нем
+    cargo                               # Для Rust-инструментов (стилизаторы, линтеры)
+
+    # 3. Дополнительные форматировщики и инструменты
+    stylua            # Форматирование Lua-кода (критично для Neovim конфига)
+    nodePackages.prettier # Универсальный форматировщик (HTML, JSON, MD, JS)
+    checkstyle        # Если работаешь с Java
+    
+    # 4. Рендеринг (для Snacks и работы с Markdown)
+    tectonic          # Или pdflatex — для рендеринга формул LaTeX
+    nodePackages.mermaid-cli # Чтобы прямо в Neovim видеть диаграммы Mermaid
+    
+    # 5. Утилиты для терминала (улучшают опыт)
+    bat               # Продвинутый cat с подсветкой синтаксиса (часто используется в превью)
+    eza               # Замена ls с иконками и деревом (Snacks его любит)
+    
+    bottom            # Крутой системный монитор (btm)
   ];
 
 virtualisation.libvirtd.enable = true;
@@ -148,6 +182,9 @@ networking.firewall.trustedInterfaces = [ "ham0" ];
       libx11 libxcomposite libxdamage 
       libxrandr libxcb libxext libxfixes
       libxkbcommon cairo gtk3
+
+      sqlite           # Gives Neovim access to libsqlite3.so
+      stdenv.cc.cc.lib # Fixes 99% of "missing libstdc++.so.6" errors in Mason!
     ];
   };
 

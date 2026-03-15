@@ -87,6 +87,7 @@ in
      pavucontrol
      discord
      gcc
+     fzf
      cava
      bc
      easyeffects

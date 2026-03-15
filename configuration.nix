@@ -16,7 +16,6 @@ in
 
   networking.hostName = "nixos";
 
-  # Enable networking
   networking.networkmanager.enable = true;
 
   time.timeZone = "Europe/Kyiv";
@@ -48,10 +47,10 @@ in
   };
 
   hardware.nvidia = {
-  modesetting.enable = true;
-  open = true;
-  nvidiaSettings = true;
-  package = config.boot.kernelPackages.nvidiaPackages.stable;
+    modesetting.enable = true;
+    open = true;
+    nvidiaSettings = true;
+    package = config.boot.kernelPackages.nvidiaPackages.stable;
   };
 
   services.xserver.videoDrivers = [ "nvidia" ];
@@ -78,62 +77,62 @@ in
 
   programs.steam.enable = true;
   environment.systemPackages = with pkgs; [
-     neovim
-     ghostty
-     git
-     kitty
-     rofi
-     librewolf
-     pavucontrol
-     discord
-     gcc
-     fzf
-     cava
-     bc
-     easyeffects
-     grim 
-     slurp 
-     wl-clipboard
-     blockbench
-     unzip
-     ayugram-desktop
-     zoom-us
-     qview
-     mpv
-     zed-editor
-     inputs.zen-browser.packages.${stdenv.hostPlatform.system}.default
-     jq
-     hyprpaper
-     zenity
-     (prismlauncher.override {
-    additionalLibs = with pkgs; [
-      nspr nss mesa libdrm libgbm
-      expat alsa-lib cups dbus glib pango atk
-      libx11 libxcomposite libxdamage 
-      libxrandr libxcb libxext libxfixes
-      libxkbcommon cairo gtk3
-    ];
-  })
-     mullvad-vpn
-     logmein-hamachi
-     haguichi
-     # Core
-     ripgrep
-     fd
-     lazygit
-     
-     # Mason / LSP requirements
-     python3
-     wget
-     unzip
-     
-     # Optional
-     imagemagick  # для картинок
-     shfmt        # для форматирования bash
-     tree-sitter
+    neovim
+    ghostty
+    git
+    kitty
+    rofi
+    librewolf
+    pavucontrol
+    discord
+    gcc
+    fzf
+    cava
+    bc
+    easyeffects
+    grim 
+    slurp 
+    wl-clipboard
+    blockbench
+    unzip
+    ayugram-desktop
+    zoom-us
+    qview
+    mpv
+    zed-editor
+    inputs.zen-browser.packages.${stdenv.hostPlatform.system}.default
+    jq
+    hyprpaper
+    zenity
+    (prismlauncher.override {
+      additionalLibs = with pkgs; [
+        nspr nss mesa libdrm libgbm
+        expat alsa-lib cups dbus glib pango atk
+        libx11 libxcomposite libxdamage 
+        libxrandr libxcb libxext libxfixes
+        libxkbcommon cairo gtk3
+      ];
+    })
+    mullvad-vpn
+    logmein-hamachi
+    haguichi
+    # Core
+    ripgrep
+    fd
+    lazygit
+    
+    # Mason / LSP requirements
+    python3
+    wget
+    unzip
+    
+    # Optional
+    imagemagick  # для картинок
+    shfmt        # для форматирования bash
+    tree-sitter
     nodejs_22
   
-     # --- ТВОЙ СПИСОК УЖЕ СОДЕРЖИТ МНОГОЕ, ДОБАВЬ ЭТО: ---
+    # --- ТВОЙ СПИСОК УЖЕ СОДЕРЖИТ МНОГОЕ, ДОБАВЬ ЭТО: ---
 
     # 1. Системные зависимости для плагинов Neovim
     sqlite            # Критично для Snacks.picker (хранение истории и частоты файлов)
@@ -166,12 +165,12 @@ in
     bottom            # Крутой системный монитор (btm)
   ];
 
-virtualisation.libvirtd.enable = true;
-programs.virt-manager.enable = true;
+  virtualisation.libvirtd.enable = true;
+  programs.virt-manager.enable = true;
 
-services.mullvad-vpn.enable = true;
-services.logmein-hamachi.enable = true;
-networking.firewall.trustedInterfaces = [ "ham0" ];
+  services.mullvad-vpn.enable = true;
+  services.logmein-hamachi.enable = true;
+  networking.firewall.trustedInterfaces = [ "ham0" ];
 
   programs.nix-ld = {
     enable = true;
@@ -188,8 +187,8 @@ networking.firewall.trustedInterfaces = [ "ham0" ];
   };
 
   fonts.packages = with pkgs; [
-  nerd-fonts.jetbrains-mono
-];
+    nerd-fonts.jetbrains-mono
+  ];
 
 
   programs.hyprland.enable = true;
@@ -211,31 +210,5 @@ networking.firewall.trustedInterfaces = [ "ham0" ];
 
   services.flatpak.enable = true;
 
-  # Some programs need SUID wrappers, can be configured further or are
-  # started in user sessions.
-  # programs.mtr.enable = true;
-  # programs.gnupg.agent = {
-  #   enable = true;
-  #   enableSSHSupport = true;
-  # };
-
-  # List services that you want to enable:
-
-  # Enable the OpenSSH daemon.
-  # services.openssh.enable = true;
-
-  # Open ports in the firewall.
-  # networking.firewall.allowedTCPPorts = [ ... ];
-  # networking.firewall.allowedUDPPorts = [ ... ];
-  # Or disable the firewall altogether.
-  # networking.firewall.enable = false;
-
-  # This value determines the NixOS release from which the default
-  # settings for stateful data, like file locations and database versions
-  # on your system were taken. It‘s perfectly fine and recommended to leave
-  # this value at the release version of the first install of this system.
-  # Before changing this value read the documentation for this option
-  # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "25.11"; # Did you read the comment?
-
+  system.stateVersion = "25.11";
 }

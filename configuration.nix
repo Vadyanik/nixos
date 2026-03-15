@@ -123,7 +123,6 @@ in
      lazygit
      
      # Mason / LSP requirements
-     nodejs_20
      python3
      wget
      unzip

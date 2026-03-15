@@ -145,6 +145,7 @@ in
     # 2. Окружение для Mason (чтобы ставилось вообще всё)
     python311Packages.python-lsp-server # Базовый LSP для питона
     python311Packages.pip               # Чтобы Mason мог доставлять пакеты сам
+    pipx
     nodePackages.npm                    # Важно для большинства LSP (JS, TS, CSS, Tailwind)
     go                                  # Даже если не пишешь на Go, многие инструменты на нем
     cargo                               # Для Rust-инструментов (стилизаторы, линтеры)

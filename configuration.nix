@@ -86,6 +86,7 @@ in
      librewolf
      pavucontrol
      discord
+     gcc
      cava
      bc
      easyeffects

@@ -103,8 +103,8 @@ in
     inputs.zen-browser.packages.${stdenv.hostPlatform.system}.default
     jq
     hyprpaper
-    bootdev-cli
     zenity
+    go
     (prismlauncher.override {
       additionalLibs = with pkgs; [
         nspr nss mesa libdrm libgbm

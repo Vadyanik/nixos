@@ -17,13 +17,20 @@
     awww.url = "git+https://codeberg.org/LGFae/awww";
   };
 
-  outputs = { self, nixpkgs, spicetify-nix, ... }@inputs: {
-    nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
-      specialArgs = { inherit inputs; };
-      modules = [
-        ./configuration.nix
-        spicetify-nix.nixosModules.default
-      ];
+  outputs =
+    {
+      self,
+      nixpkgs,
+      spicetify-nix,
+      ...
+    }@inputs:
+    {
+      nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
+        specialArgs = { inherit inputs; };
+        modules = [
+          ./configuration.nix
+          spicetify-nix.nixosModules.default
+        ];
+      };
     };
-  };
 }

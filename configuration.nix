@@ -97,6 +97,7 @@ in
     librewolf
     pavucontrol
     discord
+    opencode
     gcc
     fzf
     cava

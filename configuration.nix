@@ -98,6 +98,7 @@ in
     pavucontrol
     discord
     opencode
+    claude-code
     gcc
     fzf
     cava

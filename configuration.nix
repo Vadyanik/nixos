@@ -100,6 +100,7 @@ in
     opencode
     claude-code
     gcc
+    dotnet-sdk_8
     fzf
     cava
     bc

@@ -98,6 +98,7 @@ in
     pavucontrol
     discord
     opencode
+    starship
     claude-code
     gcc
     dotnet-sdk_8

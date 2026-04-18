@@ -100,6 +100,7 @@ in
     opencode
     starship
     wtype
+    keyd
     claude-code
     gcc
     dotnet-sdk_8

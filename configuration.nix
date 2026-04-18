@@ -235,6 +235,7 @@ in
       sqlite # Gives Neovim access to libsqlite3.so
       stdenv.cc.cc.lib # Fixes 99% of "missing libstdc++.so.6" errors in Mason!
     ];
+
   };
 
   services.keyd = {

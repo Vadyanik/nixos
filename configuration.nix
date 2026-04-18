@@ -99,6 +99,7 @@ in
     discord
     opencode
     starship
+    wtype
     claude-code
     gcc
     dotnet-sdk_8

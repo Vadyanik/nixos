@@ -100,7 +100,6 @@ in
     opencode
     starship
     wtype
-    keyd
     claude-code
     gcc
     dotnet-sdk_8
@@ -236,6 +235,16 @@ in
       sqlite # Gives Neovim access to libsqlite3.so
       stdenv.cc.cc.lib # Fixes 99% of "missing libstdc++.so.6" errors in Mason!
     ];
+  };
+
+  services.keyd = {
+    enable = true;
+    keyboards = {
+      default = {
+        ids = [ "*" ];
+        extraConfig = builtins.readFile ./configs/keyd/default.conf;
+      };
+    };
   };
 
   fonts.packages = with pkgs; [

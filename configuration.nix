@@ -65,6 +65,12 @@ in
     package = config.boot.kernelPackages.nvidiaPackages.stable;
   };
 
+  services.ollama = {
+    enable = true;
+    # Это автоматически добавит поддержку CUDA для NVIDIA
+    package = pkgs.ollama-cuda;
+  };
+
   services.xserver.videoDrivers = [ "nvidia" ];
 
   # Allow unfree packages
@@ -106,6 +112,7 @@ in
     fzf
     cava
     bc
+    qbittorrent
     easyeffects
     grim
     slurp

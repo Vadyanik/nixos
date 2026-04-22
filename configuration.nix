@@ -21,6 +21,11 @@ in
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
+  environment.variables = {
+    XCURSOR_THEME = "macOS"; # или название конкретной темы из пакета
+    XCURSOR_SIZE = "24";
+  };
+
   networking.hostName = "nixos";
 
   networking.networkmanager.enable = true;
@@ -104,6 +109,7 @@ in
     pavucontrol
     opencode
     discord
+    apple-cursor
     starship
     wtype
     claude-code

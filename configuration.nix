@@ -102,7 +102,6 @@ in
     rofi
     librewolf
     pavucontrol
-    discord
     opencode
     starship
     wtype

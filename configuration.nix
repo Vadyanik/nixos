@@ -103,6 +103,7 @@ in
     librewolf
     pavucontrol
     opencode
+    discord
     starship
     wtype
     claude-code

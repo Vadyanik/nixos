@@ -109,6 +109,7 @@ in
     pavucontrol
     opencode
     discord
+    vesktop
     apple-cursor
     starship
     wtype
@@ -267,6 +268,12 @@ in
     alsa.support32Bit = true;
     pulse.enable = true;
     jack.enable = true;
+  };
+
+  xdg.portal = {
+    enable = true;
+    extraPortals = [ pkgs.xdg-desktop-portal-hyprland ];
+    config.common.default = "*";
   };
 
   programs.obs-studio = {

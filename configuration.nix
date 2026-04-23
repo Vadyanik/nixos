@@ -108,7 +108,6 @@ in
     librewolf
     pavucontrol
     opencode
-    discord
     vesktop
     apple-cursor
     starship

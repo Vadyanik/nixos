@@ -109,6 +109,7 @@ in
     pavucontrol
     opencode
     vesktop
+    discord
     apple-cursor
     starship
     wtype

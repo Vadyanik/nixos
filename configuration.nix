@@ -219,7 +219,10 @@ in
 
   services.mullvad-vpn.enable = true;
   services.logmein-hamachi.enable = true;
-  networking.firewall.trustedInterfaces = [ "ham0" ];
+  networking.firewall.trustedInterfaces = [
+    "ham0"
+    "virbr0"
+  ];
 
   programs.nix-ld = {
     enable = true;

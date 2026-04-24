@@ -97,6 +97,11 @@ in
       ncsVisualizer
     ];
   };
+  environment.sessionVariables = {
+    PATH = [
+      "$HOME/.local/bin"
+    ];
+  };
 
   programs.steam.enable = true;
   environment.systemPackages = with pkgs; [

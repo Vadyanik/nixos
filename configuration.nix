@@ -110,6 +110,7 @@ in
     opencode
     vesktop
     discord
+    chromium
     apple-cursor
     starship
     wtype

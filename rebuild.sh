@@ -17,7 +17,7 @@ generate_commit_message() {
 
     # Try to get AI-generated message
     local ai_msg
-    ai_msg=$(sudo -u "$REAL_USER" aic -y 2>/dev/null || echo "")
+    ai_msg=$(sudo -u "$REAL_USER" /home/vadyanik/.local/bin/aic -y 2>/dev/null || echo "")
 
     # Use AI message if non-empty, otherwise fallback
     if [ -n "$ai_msg" ] && [ "$ai_msg" != "" ]; then

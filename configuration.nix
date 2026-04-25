@@ -137,7 +137,6 @@ in
     qview
     mpv
     vlc
-    zed-editor
     inputs.zen-browser.packages.${stdenv.hostPlatform.system}.default
     jq
     hyprpaper

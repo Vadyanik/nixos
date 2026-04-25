@@ -16,13 +16,20 @@ generate_commit_message() {
     local fallback_msg="${prefix}: $(date +'%Y-%m-%d %H:%M:%S')"
 
     # Try to get AI-generated message
+    echo "[DEBUG] Attempting to run: sudo -u $REAL_USER /home/vadyanik/.local/bin/aic -y" >&2
     local ai_msg
-    ai_msg=$(sudo -u "$REAL_USER" /home/vadyanik/.local/bin/aic -y 2>/dev/null || echo "")
+    ai_msg=$(sudo -u "$REAL_USER" /home/vadyanik/.local/bin/aic -y)
+    local exit_code=$?
+
+    echo "[DEBUG] aic exit code: $exit_code" >&2
+    echo "[DEBUG] aic output: '$ai_msg'" >&2
+    echo "[DEBUG] aic output length: ${#ai_msg}" >&2
 
     # Use AI message if non-empty, otherwise fallback
     if [ -n "$ai_msg" ] && [ "$ai_msg" != "" ]; then
         echo "$ai_msg"
     else
+        echo "[DEBUG] Using fallback message" >&2
         echo "$fallback_msg"
     fi
 }

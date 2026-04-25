@@ -142,6 +142,7 @@ in
     hyprpaper
     zenity
     go
+
     (prismlauncher.override {
       additionalLibs = with pkgs; [
         nspr

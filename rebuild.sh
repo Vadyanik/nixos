@@ -10,6 +10,23 @@ USER_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
 
 export LC_ALL=C
 
+# Function to generate commit message with AI or fallback
+generate_commit_message() {
+    local prefix="$1"  # "rebuild" or "update"
+    local fallback_msg="${prefix}: $(date +'%Y-%m-%d %H:%M:%S')"
+
+    # Try to get AI-generated message
+    local ai_msg
+    ai_msg=$(sudo -u "$REAL_USER" aic -y 2>/dev/null || echo "")
+
+    # Use AI message if non-empty, otherwise fallback
+    if [ -n "$ai_msg" ] && [ "$ai_msg" != "" ]; then
+        echo "$ai_msg"
+    else
+        echo "$fallback_msg"
+    fi
+}
+
 cd /etc/nixos || exit
 
 sudo git config --global --add safe.directory /etc/nixos
@@ -75,7 +92,8 @@ if [ -n "$CORE_CHANGED" ]; then
             echo "Stats updated: Total $NEW_COUNT, Avg $AVG_REBUILDS/day"
         fi
 
-        sudo git commit -m "rebuild: $(date +'%Y-%m-%d %H:%M:%S')" --quiet
+        COMMIT_MSG=$(generate_commit_message "rebuild")
+        sudo git commit -m "$COMMIT_MSG" --quiet
         sudo GIT_SSH_COMMAND="ssh -i $USER_HOME/.ssh/id_ed25519 -o IdentitiesOnly=yes" \
              git push origin main --force
     else
@@ -84,7 +102,8 @@ if [ -n "$CORE_CHANGED" ]; then
     fi
 else
     echo "Non-core changes detected. Syncing..."
-    sudo git commit -m "update: $(date +'%Y-%m-%d %H:%M:%S')" --quiet
+    COMMIT_MSG=$(generate_commit_message "update")
+    sudo git commit -m "$COMMIT_MSG" --quiet
     sudo GIT_SSH_COMMAND="ssh -i $USER_HOME/.ssh/id_ed25519 -o IdentitiesOnly=yes" \
          git push origin main --force
 fi

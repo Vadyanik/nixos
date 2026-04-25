@@ -113,9 +113,8 @@ in
     librewolf
     pavucontrol
     opencode
-    vesktop
-    discord
     chromium
+    bat
     apple-cursor
     starship
     wtype

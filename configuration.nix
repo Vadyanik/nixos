@@ -169,9 +169,8 @@ in
         gtk3
       ];
     })
+
     mullvad-vpn
-    logmein-hamachi
-    haguichi
     # Core
     ripgrep
     fd

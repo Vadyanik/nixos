@@ -211,6 +211,7 @@ in
 
     bottom # Крутой системный монитор (btm)
   ];
+  # AI COMMIT MESSAGES TEST
 
   virtualisation.libvirtd.enable = true;
   programs.virt-manager.enable = true;

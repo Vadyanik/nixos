@@ -114,7 +114,6 @@ in
     pavucontrol
     opencode
     chromium
-    bat
     apple-cursor
     starship
     wtype

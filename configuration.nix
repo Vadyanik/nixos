@@ -172,23 +172,20 @@ in
     })
 
     mullvad-vpn
-    # Core
+
     ripgrep
     fd
     lazygit
 
-    # Mason / LSP requirements
     python3
     wget
     unzip
 
-    # Optional
     imagemagick # для картинок
     shfmt # для форматирования bash
     tree-sitter
     nodejs_22
 
-    # 1. Системные зависимости для плагинов Neovim
     sqlite # Критично для Snacks.picker (хранение истории и частоты файлов)
     lua51Packages.luarocks
     lua5_1
@@ -196,23 +193,19 @@ in
     ghostscript # Для отображения PDF в Neovim через Snacks.image
     ast-grep # Для умного структурного поиска в grug-far
 
-    # 2. Окружение для Mason (чтобы ставилось вообще всё)
     python311Packages.python-lsp-server # Базовый LSP для питона
     python311Packages.pip # Чтобы Mason мог доставлять пакеты сам
     pipx
     nodePackages.npm # Важно для большинства LSP (JS, TS, CSS, Tailwind)
     cargo # Для Rust-инструментов (стилизаторы, линтеры)
 
-    # 3. Дополнительные форматировщики и инструменты
     stylua # Форматирование Lua-кода (критично для Neovim конфига)
     nodePackages.prettier # Универсальный форматировщик (HTML, JSON, MD, JS)
     checkstyle # Если работаешь с Java
 
-    # 4. Рендеринг (для Snacks и работы с Markdown)
     tectonic # Или pdflatex — для рендеринга формул LaTeX
     nodePackages.mermaid-cli # Чтобы прямо в Neovim видеть диаграммы Mermaid
 
-    # 5. Утилиты для терминала (улучшают опыт)
     bat # Продвинутый cat с подсветкой синтаксиса (часто используется в превью)
     eza # Замена ls с иконками и деревом (Snacks его любит)
 

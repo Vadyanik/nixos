@@ -23,7 +23,7 @@ generate_commit_message() {
 
     # Try to get AI-generated message with environment preserved
     local ai_msg
-    ai_msg=$(sudo -u "$REAL_USER" --preserve-env=GOOGLE_API_KEY /home/vadyanik/.local/bin/aic -y 2>/dev/null || echo "")
+    ai_msg=$(sudo -u "$REAL_USER" --preserve-env=GOOGLE_API_KEY /home/vadyanik/.local/bin/aic -p 2>/dev/null || echo "")
 
     # Use AI message if non-empty, otherwise fallback
     if [ -n "$ai_msg" ] && [ "$ai_msg" != "" ]; then
@@ -100,7 +100,12 @@ if [ -n "$CORE_CHANGED" ]; then
 
         COMMIT_MSG=$(generate_commit_message "rebuild")
         sudo git commit -m "$COMMIT_MSG" --quiet
-        echo -e "\n\e[1;36m🤖 AI Commit:\e[0m \e[1;32m$COMMIT_MSG\e[0m\n"
+        # Check if this is an AI-generated or auto-generated commit
+        if [[ "$COMMIT_MSG" =~ ^rebuild:\ [0-9]{4}-[0-9]{2}-[0-9]{2}\ [0-9]{2}:[0-9]{2}:[0-9]{2}$ ]]; then
+            echo -e "\n\e[1;36mAuto Commit:\e[0m \e[1;32m$COMMIT_MSG\e[0m\n"
+        else
+            echo -e "\n\e[1;36mAI Commit:\e[0m \e[1;32m$COMMIT_MSG\e[0m\n"
+        fi
         sudo GIT_SSH_COMMAND="ssh -i $USER_HOME/.ssh/id_ed25519 -o IdentitiesOnly=yes" \
              git push origin main --force
     else
@@ -111,7 +116,12 @@ else
     echo "Non-core changes detected. Syncing..."
     COMMIT_MSG=$(generate_commit_message "update")
     sudo git commit -m "$COMMIT_MSG" --quiet
-    echo -e "\n\e[1;36m🤖 AI Commit:\e[0m \e[1;32m$COMMIT_MSG\e[0m\n"
+    # Check if this is an AI-generated or auto-generated commit
+    if [[ "$COMMIT_MSG" =~ ^update:\ [0-9]{4}-[0-9]{2}-[0-9]{2}\ [0-9]{2}:[0-9]{2}:[0-9]{2}$ ]]; then
+        echo -e "\n\e[1;36mAuto Commit:\e[0m \e[1;32m$COMMIT_MSG\e[0m\n"
+    else
+        echo -e "\n\e[1;36mAI Commit:\e[0m \e[1;32m$COMMIT_MSG\e[0m\n"
+    fi
     sudo GIT_SSH_COMMAND="ssh -i $USER_HOME/.ssh/id_ed25519 -o IdentitiesOnly=yes" \
          git push origin main --force
 fi

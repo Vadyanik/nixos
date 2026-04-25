@@ -128,7 +128,6 @@ in
     grim
     slurp
     wl-clipboard
-    blockbench
     unzip
     ayugram-desktop
     obsidian

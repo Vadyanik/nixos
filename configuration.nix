@@ -64,6 +64,26 @@ in
     packages = with pkgs; [ ];
   };
 
+  programs.zsh = {
+    enable = true;
+
+    # В системном NixOS это называется interactiveShellInit
+    interactiveShellInit = ''
+      # Пути
+      export PATH="$PATH:/home/vadyanik/.local/bin"
+      export PATH="$PATH:$HOME/go/bin"
+      export PATH="$HOME/.local/bin:$PATH"
+
+      # Загрузка ключа
+      if [ -f /home/vadyanik/.google_api_key ]; then
+        export GOOGLE_API_KEY=$(cat /home/vadyanik/.google_api_key)
+      fi
+    '';
+  };
+  programs.starship = {
+    enable = true;
+  };
+
   hardware.nvidia = {
     modesetting.enable = true;
     open = true;
@@ -76,8 +96,6 @@ in
     # Это автоматически добавит поддержку CUDA для NVIDIA
     package = pkgs.ollama-cuda;
   };
-
-  programs.zsh.enable = true;
 
   services.xserver.videoDrivers = [ "nvidia" ];
 
@@ -118,7 +136,6 @@ in
     opencode
     chromium
     apple-cursor
-    starship
     wtype
     claude-code
     gcc
@@ -211,7 +228,6 @@ in
 
     bottom # Крутой системный монитор (btm)
   ];
-  # AI COMMIT MESSAGES TEST
 
   virtualisation.libvirtd.enable = true;
   programs.virt-manager.enable = true;

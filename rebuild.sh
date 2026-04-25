@@ -100,6 +100,7 @@ if [ -n "$CORE_CHANGED" ]; then
 
         COMMIT_MSG=$(generate_commit_message "rebuild")
         sudo git commit -m "$COMMIT_MSG" --quiet
+        echo -e "\n\e[1;36m🤖 AI Commit:\e[0m \e[1;32m$COMMIT_MSG\e[0m\n"
         sudo GIT_SSH_COMMAND="ssh -i $USER_HOME/.ssh/id_ed25519 -o IdentitiesOnly=yes" \
              git push origin main --force
     else
@@ -110,6 +111,7 @@ else
     echo "Non-core changes detected. Syncing..."
     COMMIT_MSG=$(generate_commit_message "update")
     sudo git commit -m "$COMMIT_MSG" --quiet
+    echo -e "\n\e[1;36m🤖 AI Commit:\e[0m \e[1;32m$COMMIT_MSG\e[0m\n"
     sudo GIT_SSH_COMMAND="ssh -i $USER_HOME/.ssh/id_ed25519 -o IdentitiesOnly=yes" \
          git push origin main --force
 fi

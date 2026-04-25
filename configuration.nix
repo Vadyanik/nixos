@@ -53,6 +53,7 @@ in
 
   users.users.vadyanik = {
     isNormalUser = true;
+    shell = pkgs.zsh;
     description = "vadyanik";
     extraGroups = [
       "networkmanager"
@@ -75,6 +76,8 @@ in
     # Это автоматически добавит поддержку CUDA для NVIDIA
     package = pkgs.ollama-cuda;
   };
+
+  programs.zsh.enable = true;
 
   services.xserver.videoDrivers = [ "nvidia" ];
 

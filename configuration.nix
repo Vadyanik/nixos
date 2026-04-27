@@ -78,10 +78,6 @@ in
       export PATH="$PATH:/home/vadyanik/.local/bin"
       export PATH="$PATH:$HOME/go/bin"
       export PATH="$HOME/.local/bin:$PATH"
-
-      if [ -f /home/vadyanik/.google_api_key ]; then
-        export GOOGLE_API_KEY=$(cat /home/vadyanik/.google_api_key)
-      fi
     '';
   };
   programs.starship = {

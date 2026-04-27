@@ -15,18 +15,12 @@ generate_commit_message() {
     local prefix="$1"  # "rebuild" or "update"
     local fallback_msg="${prefix}: $(date +'%Y-%m-%d %H:%M:%S')"
 
-    # Check if API key is available, fallback immediately if not
-    if [ -z "$GOOGLE_API_KEY" ]; then
-        echo "$fallback_msg"
-        return
-    fi
-
-    # Try to get AI-generated message with environment preserved
+    # Try to get AI-generated message
     local ai_msg
     local ai_error
     local temp_error_file=$(mktemp)
 
-    ai_msg=$(sudo -u "$REAL_USER" --preserve-env=GOOGLE_API_KEY /home/vadyanik/.local/bin/aic -p 2>"$temp_error_file" || echo "")
+    ai_msg=$(sudo -u "$REAL_USER" /home/vadyanik/.local/bin/aic -p 2>"$temp_error_file" || echo "")
     ai_error=$(cat "$temp_error_file")
     rm -f "$temp_error_file"
 

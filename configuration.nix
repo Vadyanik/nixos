@@ -139,6 +139,7 @@ in
     wtype
     claude-code
     gcc
+    ulauncher
     dotnet-sdk_8
     fzf
     cava

@@ -23,12 +23,22 @@ generate_commit_message() {
 
     # Try to get AI-generated message with environment preserved
     local ai_msg
-    ai_msg=$(sudo -u "$REAL_USER" --preserve-env=GOOGLE_API_KEY /home/vadyanik/.local/bin/aic -p 2>/dev/null || echo "")
+    local ai_error
+    local temp_error_file=$(mktemp)
+
+    ai_msg=$(sudo -u "$REAL_USER" --preserve-env=GOOGLE_API_KEY /home/vadyanik/.local/bin/aic -p 2>"$temp_error_file" || echo "")
+    ai_error=$(cat "$temp_error_file")
+    rm -f "$temp_error_file"
 
     # Use AI message if non-empty, otherwise fallback
     if [ -n "$ai_msg" ] && [ "$ai_msg" != "" ]; then
         echo "$ai_msg"
     else
+        # Show error message in red if aic failed
+        if [ -n "$ai_error" ]; then
+            echo -e "\n\e[1;31m✗ AI commit failed:\e[0m" >&2
+            echo -e "\e[31m$ai_error\e[0m\n" >&2
+        fi
         echo "$fallback_msg"
     fi
 }

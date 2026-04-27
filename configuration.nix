@@ -67,6 +67,11 @@ in
   programs.zsh = {
     enable = true;
 
+    shellAliases = {
+      claudedsp = "claude --dangerously-skip-permissions";
+      cat = "bat";
+    };
+
     # В системном NixOS это называется interactiveShellInit
     interactiveShellInit = ''
       # Пути
@@ -74,7 +79,6 @@ in
       export PATH="$PATH:$HOME/go/bin"
       export PATH="$HOME/.local/bin:$PATH"
 
-      # Загрузка ключа
       if [ -f /home/vadyanik/.google_api_key ]; then
         export GOOGLE_API_KEY=$(cat /home/vadyanik/.google_api_key)
       fi

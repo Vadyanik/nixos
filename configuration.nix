@@ -124,6 +124,19 @@ in
     ];
   };
 
+  environment.sessionVariables = {
+    BROWSER = "librewolf";
+  };
+
+  # В NixOS эта опция называется xdg.mime, а не xdg.mimeApps
+  xdg.mime.defaultApplications = {
+    "text/html" = "librewolf.desktop";
+    "x-scheme-handler/http" = "librewolf.desktop";
+    "x-scheme-handler/https" = "librewolf.desktop";
+    "x-scheme-handler/about" = "librewolf.desktop";
+    "x-scheme-handler/unknown" = "librewolf.desktop";
+  };
+
   programs.steam.enable = true;
   environment.systemPackages = with pkgs; [
     neovim

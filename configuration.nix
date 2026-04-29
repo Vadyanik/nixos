@@ -153,6 +153,7 @@ in
     claude-code
     gcc
     ulauncher
+    warp-terminal
     dotnet-sdk_8
     fzf
     cava

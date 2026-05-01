@@ -347,5 +347,7 @@ in
 
   services.flatpak.enable = true;
 
+  services.input-remapper.enable = true;
+
   system.stateVersion = "25.11";
 }

@@ -152,6 +152,7 @@ in
     wtype
     claude-code
     gcc
+    polkit_gnome
     ulauncher
     dotnet-sdk_8
     fzf

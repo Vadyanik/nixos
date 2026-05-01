@@ -339,8 +339,6 @@ in
     options v4l2loopback devices=1 video_nr=1 card_label="OBS Virtual Camera" exclusive_caps=1
   '';
 
-  security.polkit.enable = true;
-
   hardware.bluetooth.enable = true;
   hardware.bluetooth.powerOnBoot = true;
 
@@ -349,6 +347,24 @@ in
   services.flatpak.enable = true;
 
   services.input-remapper.enable = true;
+
+  # Включаем сам Polkit (на всякий случай, обычно включен по умолчанию)
+  security.polkit.enable = true;
+
+  # Создаем пользовательский сервис, который сам найдет нужный путь к пакету
+  systemd.user.services.polkit-gnome-authentication-agent-1 = {
+    description = "polkit-gnome-authentication-agent-1";
+    wantedBy = [ "graphical-session.target" ];
+    wants = [ "graphical-session.target" ];
+    after = [ "graphical-session.target" ];
+    serviceConfig = {
+      Type = "simple";
+      ExecStart = "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1";
+      Restart = "on-failure";
+      RestartSec = 1;
+      TimeoutStopSec = 10;
+    };
+  };
 
   system.stateVersion = "25.11";
 }

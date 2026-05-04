@@ -155,6 +155,7 @@ in
     gcc
     vesktop
     polkit_gnome
+    lunar-client
     ulauncher
     dotnet-sdk_8
     fzf

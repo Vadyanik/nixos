@@ -153,6 +153,7 @@ in
     wtype
     claude-code
     gcc
+    vesktop
     polkit_gnome
     ulauncher
     dotnet-sdk_8
@@ -273,7 +274,6 @@ in
       atk
       libx11
       libxcomposite
-      vesktop
       libxdamage
       libxrandr
       libxcb

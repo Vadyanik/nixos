@@ -273,6 +273,7 @@ in
       atk
       libx11
       libxcomposite
+      vesktop
       libxdamage
       libxrandr
       libxcb

@@ -135,6 +135,7 @@ in
     "x-scheme-handler/https" = "librewolf.desktop";
     "x-scheme-handler/about" = "librewolf.desktop";
     "x-scheme-handler/unknown" = "librewolf.desktop";
+    "inode/directory" = "org.kde.dolphin.desktop";
   };
 
   programs.steam.enable = true;
@@ -168,6 +169,7 @@ in
     obsidian
     zoom-us
     qview
+    kdePackages.dolphin
     mpv
     vlc
     inputs.zen-browser.packages.${stdenv.hostPlatform.system}.default

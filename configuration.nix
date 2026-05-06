@@ -156,6 +156,7 @@ in
     vesktop
     polkit_gnome
     lunar-client
+    tor-browser
     ulauncher
     dotnet-sdk_8
     fzf

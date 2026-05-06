@@ -157,6 +157,7 @@ in
     polkit_gnome
     lunar-client
     tor-browser
+    copilot-cli
     ulauncher
     dotnet-sdk_8
     fzf

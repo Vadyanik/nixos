@@ -158,6 +158,7 @@ in
     lunar-client
     tor-browser
     ulauncher
+    blockbench
     dotnet-sdk_8
     fzf
     cava

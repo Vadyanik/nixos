@@ -159,6 +159,7 @@ in
     tor-browser
     ulauncher
     blockbench
+    whisper-cpp
     dotnet-sdk_8
     fzf
     cava

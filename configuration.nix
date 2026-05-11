@@ -278,6 +278,7 @@ in
       libdrm
       libgbm
       expat
+      swtpm
       alsa-lib
       cups
       dbus

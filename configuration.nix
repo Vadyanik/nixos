@@ -252,7 +252,14 @@ in
     bottom # Крутой системный монитор (btm)
   ];
 
-  virtualisation.libvirtd.enable = true;
+  virtualisation.libvirtd = {
+    enable = true;
+    qemu = {
+      package = pkgs.qemu_kvm;
+      runAsRoot = true; # Это упростит доступ к файлам в ~/
+      swtpm.enable = true;
+    };
+  };
   programs.virt-manager.enable = true;
 
   services.mullvad-vpn.enable = true;

@@ -344,9 +344,13 @@ in
   boot.kernelModules = [ "v4l2loopback" ];
 
   boot.extraModprobeConfig = ''
+    # Твоя камера для OBS
     options v4l2loopback devices=1 video_nr=1 card_label="OBS Virtual Camera" exclusive_caps=1
-  '';
 
+    # Исправление для запуска Windows в Quickemu
+    options kvm ignore_msrs=1
+    options kvm report_ignored_msrs=0
+  '';
   hardware.bluetooth.enable = true;
   hardware.bluetooth.powerOnBoot = true;
 

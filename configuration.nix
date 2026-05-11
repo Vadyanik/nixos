@@ -160,6 +160,7 @@ in
     ulauncher
     blockbench
     whisper-cpp
+    quickemu
     dotnet-sdk_8
     fzf
     cava

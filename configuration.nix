@@ -126,12 +126,6 @@ in
       zstyle ':completion:*:warnings' format '%F{red}No matches for: %d%f'
       zstyle ':completion:*' list-colors ''${(s.:.)LS_COLORS}
 
-      # fzf keybindings and completion if the package exposes them.
-      if command -v fzf-share >/dev/null 2>&1; then
-        source "$(fzf-share)/key-bindings.zsh"
-        source "$(fzf-share)/completion.zsh"
-      fi
-
       # Quick fuzzy package runner migrated from /home/vadyanik/.zshrc.
       unalias nspf 2>/dev/null
       nspf() {

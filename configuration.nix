@@ -86,7 +86,6 @@ in
     };
 
     interactiveShellInit = ''
-      # Paths migrated from /home/vadyanik/.zshrc and extended for local tools.
       export PATH="$HOME/.local/bin:$PATH"
       export PATH="$HOME/.npm-global/bin:$PATH"
       export PATH="$HOME/go/bin:$PATH"

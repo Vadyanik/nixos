@@ -1,0 +1,19 @@
++ PROFILE_REPO_PATH=/home/vadyanik/dev/Vadyanik
++ BIRTH_DATE=2026-02-13
+++ whoami
++ REAL_USER=vadyanik
+++ getent passwd vadyanik
+++ cut -d: -f6
++ USER_HOME=/home/vadyanik
++ export LC_ALL=C
++ LC_ALL=C
++ cd /etc/nixos
++ sudo git config --global --add safe.directory /etc/nixos
+++ sudo -u vadyanik git config --global user.name
++ USER_NAME=vadyanik
+++ sudo -u vadyanik git config --global user.email
++ USER_EMAIL=omletgamer100@gmail.com
++ sudo git config user.name vadyanik
++ sudo git config user.email omletgamer100@gmail.com
++ git diff --quiet
++ sudo git add .

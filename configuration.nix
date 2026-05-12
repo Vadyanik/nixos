@@ -83,8 +83,6 @@ in
       ls = "eza --icons --group-directories-first";
       lt = "eza --tree --icons --level=2";
       mkdir = "mkdir -p";
-      nixcfg = "cd /etc/nixos";
-      rebuild = "cd /etc/nixos && ./rebuild.sh";
     };
 
     interactiveShellInit = ''

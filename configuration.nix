@@ -269,6 +269,11 @@ in
     "virbr0"
   ];
 
+  services.openssh = {
+    enable = true;
+    settings.PasswordAuthentication = true;
+  };
+
   programs.nix-ld = {
     enable = true;
     libraries = with pkgs; [

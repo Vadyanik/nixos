@@ -75,6 +75,7 @@ in
     shellAliases = {
       claudedsp = "claude --dangerously-skip-permissions";
       cat = "bat";
+      cd = "z";
       c = "clear";
       grep = "rg";
       la = "eza -la --icons --git";

@@ -152,6 +152,7 @@ in
     apple-cursor
     wtype
     claude-code
+    codex
     gcc
     vesktop
     polkit_gnome

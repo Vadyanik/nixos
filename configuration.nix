@@ -163,6 +163,7 @@ in
     quickemu
     dotnet-sdk_8
     fzf
+    bubblewrap
     cava
     bc
     qbittorrent

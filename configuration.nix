@@ -126,6 +126,14 @@ in
       zstyle ':completion:*:warnings' format '%F{red}No matches for: %d%f'
       zstyle ':completion:*' list-colors ''${(s.:.)LS_COLORS}
 
+      # fzf restores a read-only zle option on zsh 5.9, so silence that harmless warning.
+      if [[ -r ${pkgs.fzf}/share/fzf/completion.zsh ]]; then
+        source ${pkgs.fzf}/share/fzf/completion.zsh 2>/dev/null
+      fi
+      if [[ -r ${pkgs.fzf}/share/fzf/key-bindings.zsh ]]; then
+        source ${pkgs.fzf}/share/fzf/key-bindings.zsh 2>/dev/null
+      fi
+
       # Quick fuzzy package runner migrated from /home/vadyanik/.zshrc.
       unalias nspf 2>/dev/null
       nspf() {
@@ -146,8 +154,8 @@ in
   };
 
   programs.fzf = {
-    keybindings = true;
-    fuzzyCompletion = true;
+    keybindings = false;
+    fuzzyCompletion = false;
   };
 
   programs.zoxide = {

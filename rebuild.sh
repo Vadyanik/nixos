@@ -1,21 +1,20 @@
 #!/usr/bin/env bash
 
-# --- CONFIGURATION ---
+# --- Configuration ---
 PROFILE_REPO_PATH="/home/vadyanik/dev/Vadyanik"
 BIRTH_DATE="2026-02-13"
-# ---------------------
+# -------------------
 
 REAL_USER=${SUDO_USER:-$(whoami)}
 USER_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
 
 export LC_ALL=C
 
-# Function to generate commit message with AI or fallback
+# Generate a commit message with AI or a timestamp fallback.
 generate_commit_message() {
     local prefix="$1"  # "rebuild" or "update"
     local fallback_msg="${prefix}: $(date +'%Y-%m-%d %H:%M:%S')"
 
-    # Try to get AI-generated message
     local ai_msg
     local ai_error
     local temp_error_file=$(mktemp)
@@ -24,11 +23,9 @@ generate_commit_message() {
     ai_error=$(cat "$temp_error_file")
     rm -f "$temp_error_file"
 
-    # Use AI message if non-empty, otherwise fallback
     if [ -n "$ai_msg" ] && [ "$ai_msg" != "" ]; then
         echo "$ai_msg"
     else
-        # Show error message in red if aic failed
         if [ -n "$ai_error" ]; then
             echo -e "\n\e[1;31m✗ AI commit failed:\e[0m" >&2
             echo -e "\e[31m$ai_error\e[0m\n" >&2
@@ -53,7 +50,7 @@ fi
 
 sudo git add .
 
-CORE_CHANGED=$(git diff --cached --name-only | grep -E 'flake.nix|configuration.nix')
+CORE_CHANGED=$(git diff --cached --name-only | grep -E '^(flake\.nix|flake\.lock|hosts/|modules/)')
 
 if [ -n "$CORE_CHANGED" ]; then
     echo "Core changes detected. Rebuilding..."
@@ -67,12 +64,10 @@ if [ -n "$CORE_CHANGED" ]; then
 
             sudo -u "$REAL_USER" git pull origin main --quiet
 
-            # 1. Считаем общее количество
             CURRENT_COUNT=$(grep -oP 'System%20Rebuilds-\K[0-9]+' "$README_FILE" | head -n 1)
             [ -z "$CURRENT_COUNT" ] && CURRENT_COUNT=0
             NEW_COUNT=$((CURRENT_COUNT + 1))
 
-            # 2. Считаем среднее (теперь с точностью до 2 знаков)
             TODAY=$(date +%s)
             START=$(date -d "$BIRTH_DATE" +%s)
             DIFF_DAYS=$(( (TODAY - START) / 86400 ))
@@ -80,17 +75,14 @@ if [ -n "$CORE_CHANGED" ]; then
 
             AVG_REBUILDS=$(echo "scale=2; $NEW_COUNT / $DIFF_DAYS" | bc | awk '{printf "%.2f", $0}')
 
-            # 3. Время (Новый формат: День.Месяц.Год Время)
             LAST_REBUILD_TIME=$(date +'%d.%m.%Y%%20%H:%M')
 
-            # 4. Обновляем README точечно через sed
             sed -i "s|^!\[Rebuilds\].*|![Rebuilds](https://img.shields.io/badge/System%20Rebuilds-${NEW_COUNT}-blue?style=flat-square\&logo=nixos)|" "$README_FILE"
 
             sed -i "s|^!\[Rebuilds Per Day\].*|![Rebuilds Per Day](https://img.shields.io/badge/Avg%20Rebuilds%2FDay-${AVG_REBUILDS}-orange?style=flat-square)|" "$README_FILE"
 
             sed -i "s|^!\[Last Rebuild\].*|![Last Rebuild](https://img.shields.io/badge/Last%20Update-${LAST_REBUILD_TIME}-blue?style=flat-square)|" "$README_FILE"
 
-            # Возвращаем права владельцу
             chown "$REAL_USER:users" "$README_FILE"
 
             sudo -u "$REAL_USER" git add README.md
@@ -104,7 +96,6 @@ if [ -n "$CORE_CHANGED" ]; then
 
         COMMIT_MSG=$(generate_commit_message "rebuild")
         sudo git commit -m "$COMMIT_MSG" --quiet
-        # Check if this is an AI-generated or auto-generated commit
         if [[ "$COMMIT_MSG" =~ ^rebuild:\ [0-9]{4}-[0-9]{2}-[0-9]{2}\ [0-9]{2}:[0-9]{2}:[0-9]{2}$ ]]; then
             echo -e "\n\e[1;36mAuto Commit:\e[0m \e[1;32m$COMMIT_MSG\e[0m\n"
         else
@@ -120,7 +111,6 @@ else
     echo "Non-core changes detected. Syncing..."
     COMMIT_MSG=$(generate_commit_message "update")
     sudo git commit -m "$COMMIT_MSG" --quiet
-    # Check if this is an AI-generated or auto-generated commit
     if [[ "$COMMIT_MSG" =~ ^update:\ [0-9]{4}-[0-9]{2}-[0-9]{2}\ [0-9]{2}:[0-9]{2}:[0-9]{2}$ ]]; then
         echo -e "\n\e[1;36mAuto Commit:\e[0m \e[1;32m$COMMIT_MSG\e[0m\n"
     else

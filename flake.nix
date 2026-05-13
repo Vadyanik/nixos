@@ -1,5 +1,5 @@
 {
-  description = "NixOS Unstable Flake for nixos hostname";
+  description = "NixOS unstable flake for nixos";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
@@ -23,7 +23,7 @@
       nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
         specialArgs = { inherit inputs; };
         modules = [
-          ./configuration.nix
+          ./hosts/default/configuration.nix
           spicetify-nix.nixosModules.default
         ];
       };

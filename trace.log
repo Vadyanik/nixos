@@ -17,3 +17,72 @@
 + sudo git config user.email omletgamer100@gmail.com
 + git diff --quiet
 + sudo git add .
+++ git diff --cached --name-only
+++ grep -E 'flake.nix|configuration.nix'
++ CORE_CHANGED=configuration.nix
++ '[' -n configuration.nix ']'
++ echo 'Core changes detected. Rebuilding...'
++ sudo nixos-rebuild switch --flake . --quiet
+warning: Git tree '/etc/nixos' is dirty
+building the system configuration...
+warning: Git tree '/etc/nixos' is dirty
+Checking switch inhibitors... done
+activating the configuration...
+reloading user units for vadyanik...
+restarting sysinit-reactivation.target
+the following new units were started: NetworkManager-dispatcher.service
+Done. The new configuration is + echo 'Rebuild successful. Calculating stats...'
++ '[' -d /home/vadyanik/dev/Vadyanik ']'
++ README_FILE=/home/vadyanik/dev/Vadyanik/README.md
++ pushd /home/vadyanik/dev/Vadyanik
++ sudo -u vadyanik git pull origin main --quiet
+++ grep -oP 'System%20Rebuilds-\K[0-9]+' /home/vadyanik/dev/Vadyanik/README.md
+++ head -n 1
++ CURRENT_COUNT=156
++ '[' -z 156 ']'
++ NEW_COUNT=157
+++ date +%s
++ TODAY=1778602821
+++ date -d 2026-02-13 +%s
++ START=1770933600
++ DIFF_DAYS=88
++ '[' 88 -lt 1 ']'
+++ echo 'scale=2; 157 / 88'
+++ bc
+++ awk '{printf "%.2f", $0}'
++ AVG_REBUILDS=1.78
+++ date +%d.%m.%Y%%20%H:%M
++ LAST_REBUILD_TIME=12.05.2026%2019:20
++ sed -i 's|^!\[Rebuilds\].*|![Rebuilds](https://img.shields.io/badge/System%20Rebuilds-157-blue?style=flat-square\&logo=nixos)|' /home/vadyanik/dev/Vadyanik/README.md
++ sed -i 's|^!\[Rebuilds Per Day\].*|![Rebuilds Per Day](https://img.shields.io/badge/Avg%20Rebuilds%2FDay-1.78-orange?style=flat-square)|' /home/vadyanik/dev/Vadyanik/README.md
++ sed -i 's|^!\[Last Rebuild\].*|![Last Rebuild](https://img.shields.io/badge/Last%20Update-12.05.2026%2019:20-blue?style=flat-square)|' /home/vadyanik/dev/Vadyanik/README.md
++ chown vadyanik:users /home/vadyanik/dev/Vadyanik/README.md
++ sudo -u vadyanik git add README.md
++ sudo -u vadyanik git commit -m 'profile: rebuild #157 (1.78/day)' --quiet
++ sudo -u vadyanik 'GIT_SSH_COMMAND=ssh -i /home/vadyanik/.ssh/id_ed25519 -o IdentitiesOnly=yes' git push origin main --quiet
++ popd
++ echo 'Stats updated: Total 157, Avg 1.78/day'
+++ generate_commit_message rebuild
+++ local prefix=rebuild
++++ date '+%Y-%m-%d %H:%M:%S'
+++ local 'fallback_msg=rebuild: 2026-05-12 19:20:24'
+++ local ai_msg
+++ local ai_error
++++ mktemp
+++ local temp_error_file=/tmp/tmp.4PUUjmoC8j
++++ sudo -u vadyanik /home/vadyanik/.local/bin/aic -p
+++ ai_msg='chore: Clean up interactive shell init and capture user details in trace log'
++++ cat /tmp/tmp.4PUUjmoC8j
+++ ai_error=
+++ rm -f /tmp/tmp.4PUUjmoC8j
+++ '[' -n 'chore: Clean up interactive shell init and capture user details in trace log' ']'
+++ '[' 'chore: Clean up interactive shell init and capture user details in trace log' '!=' '' ']'
+++ echo 'chore: Clean up interactive shell init and capture user details in trace log'
++ COMMIT_MSG='chore: Clean up interactive shell init and capture user details in trace log'
++ sudo git commit -m 'chore: Clean up interactive shell init and capture user details in trace log' --quiet
++ [[ chore: Clean up interactive shell init and capture user details in trace log =~ ^rebuild: [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$ ]]
++ echo -e '\n\e[1;36mAI Commit:\e[0m \e[1;32mchore: Clean up interactive shell init and capture user details in trace log\e[0m\n'
++ sudo 'GIT_SSH_COMMAND=ssh -i /home/vadyanik/.ssh/id_ed25519 -o IdentitiesOnly=yes' git push origin main --force
+To github.com:Vadyanik/nixos.git
+   cfa8755..9985d76  main -> main
++ echo Done.

@@ -262,7 +262,6 @@ in
     kdePackages.dolphin
     mpv
     vlc
-    inputs.zen-browser.packages.${stdenv.hostPlatform.system}.default
     jq
     hyprpaper
     zenity

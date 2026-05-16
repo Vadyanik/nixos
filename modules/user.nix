@@ -50,7 +50,7 @@ in
       la = "eza -la --icons --git";
       ll = "eza -l --icons --git";
       ls = "eza --icons --group-directories-first";
-      lt = "eza --tree --icons --level=2";
+      lt = "eza --tree --icons --level=3";
       mkdir = "mkdir -p";
     };
 

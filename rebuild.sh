@@ -3,12 +3,29 @@
 # --- Configuration ---
 PROFILE_REPO_PATH="/home/vadyanik/dev/Vadyanik"
 BIRTH_DATE="2026-02-13"
+NIXOS_REBUILD="/run/current-system/sw/bin/nixos-rebuild"
 # -------------------
 
 REAL_USER=${SUDO_USER:-$(whoami)}
 USER_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
 
 export LC_ALL=C
+
+run_as_real_user() {
+    if [ "$(id -u)" -eq 0 ]; then
+        sudo -u "$REAL_USER" "$@"
+    else
+        "$@"
+    fi
+}
+
+run_nixos_rebuild() {
+    if [ "$(id -u)" -eq 0 ]; then
+        "$NIXOS_REBUILD" switch --flake . --quiet
+    else
+        sudo -n "$NIXOS_REBUILD" switch --flake . --quiet
+    fi
+}
 
 # Generate a commit message with AI or a timestamp fallback.
 generate_commit_message() {
@@ -19,7 +36,7 @@ generate_commit_message() {
     local ai_error
     local temp_error_file=$(mktemp)
 
-    ai_msg=$(sudo -u "$REAL_USER" /home/vadyanik/.local/bin/aic -p 2>"$temp_error_file" || echo "")
+    ai_msg=$(run_as_real_user /home/vadyanik/.local/bin/aic -p 2>"$temp_error_file" || echo "")
     ai_error=$(cat "$temp_error_file")
     rm -f "$temp_error_file"
 
@@ -36,11 +53,11 @@ generate_commit_message() {
 
 cd /etc/nixos || exit
 
-sudo git config --global --add safe.directory /etc/nixos
-USER_NAME=$(sudo -u "$REAL_USER" git config --global user.name)
-USER_EMAIL=$(sudo -u "$REAL_USER" git config --global user.email)
-sudo git config user.name "${USER_NAME:-NixOS Rebuild Bot}"
-sudo git config user.email "${USER_EMAIL:-rebuild-bot@nixos.local}"
+git config --global --add safe.directory /etc/nixos
+USER_NAME=$(run_as_real_user git config --global user.name)
+USER_EMAIL=$(run_as_real_user git config --global user.email)
+git config user.name "${USER_NAME:-NixOS Rebuild Bot}"
+git config user.email "${USER_EMAIL:-rebuild-bot@nixos.local}"
 
 if git diff --quiet && git diff --cached --quiet && \
    [ -z "$(git ls-files --others --exclude-standard)" ]; then
@@ -48,21 +65,24 @@ if git diff --quiet && git diff --cached --quiet && \
     exit 0
 fi
 
-sudo git add .
+if ! git add .; then
+    echo "Failed to stage changes. Check repository permissions."
+    exit 1
+fi
 
 CORE_CHANGED=$(git diff --cached --name-only | grep -E '^(flake\.nix|flake\.lock|hosts/|modules/)')
 
 if [ -n "$CORE_CHANGED" ]; then
     echo "Core changes detected. Rebuilding..."
 
-    if sudo nixos-rebuild switch --flake . --quiet; then
+    if run_nixos_rebuild; then
         echo "Rebuild successful. Calculating stats..."
 
         if [ -d "$PROFILE_REPO_PATH" ]; then
             README_FILE="$PROFILE_REPO_PATH/README.md"
             pushd "$PROFILE_REPO_PATH" > /dev/null
 
-            sudo -u "$REAL_USER" git pull origin main --quiet
+            run_as_real_user git pull origin main --quiet
 
             CURRENT_COUNT=$(grep -oP 'System%20Rebuilds-\K[0-9]+' "$README_FILE" | head -n 1)
             [ -z "$CURRENT_COUNT" ] && CURRENT_COUNT=0
@@ -83,26 +103,24 @@ if [ -n "$CORE_CHANGED" ]; then
 
             sed -i "s|^!\[Last Rebuild\].*|![Last Rebuild](https://img.shields.io/badge/Last%20Update-${LAST_REBUILD_TIME}-blue?style=flat-square)|" "$README_FILE"
 
-            chown "$REAL_USER:users" "$README_FILE"
-
-            sudo -u "$REAL_USER" git add README.md
-            sudo -u "$REAL_USER" git commit -m "profile: rebuild #$NEW_COUNT ($AVG_REBUILDS/day)" --quiet
-            sudo -u "$REAL_USER" GIT_SSH_COMMAND="ssh -i $USER_HOME/.ssh/id_ed25519 -o IdentitiesOnly=yes" \
-                 git push origin main --quiet
+            git add README.md
+            git commit -m "profile: rebuild #$NEW_COUNT ($AVG_REBUILDS/day)" --quiet
+            GIT_SSH_COMMAND="ssh -i $USER_HOME/.ssh/id_ed25519 -o IdentitiesOnly=yes" \
+                git push origin main --quiet
 
             popd > /dev/null
             echo "Stats updated: Total $NEW_COUNT, Avg $AVG_REBUILDS/day"
         fi
 
         COMMIT_MSG=$(generate_commit_message "rebuild")
-        sudo git commit -m "$COMMIT_MSG" --quiet
+        git commit -m "$COMMIT_MSG" --quiet
         if [[ "$COMMIT_MSG" =~ ^rebuild:\ [0-9]{4}-[0-9]{2}-[0-9]{2}\ [0-9]{2}:[0-9]{2}:[0-9]{2}$ ]]; then
             echo -e "\n\e[1;36mAuto Commit:\e[0m \e[1;32m$COMMIT_MSG\e[0m\n"
         else
             echo -e "\n\e[1;36mAI Commit:\e[0m \e[1;32m$COMMIT_MSG\e[0m\n"
         fi
-        sudo GIT_SSH_COMMAND="ssh -i $USER_HOME/.ssh/id_ed25519 -o IdentitiesOnly=yes" \
-             git push origin main --force
+        GIT_SSH_COMMAND="ssh -i $USER_HOME/.ssh/id_ed25519 -o IdentitiesOnly=yes" \
+            git push origin main --force
     else
         echo "Rebuild failed!"
         exit 1
@@ -110,14 +128,14 @@ if [ -n "$CORE_CHANGED" ]; then
 else
     echo "Non-core changes detected. Syncing..."
     COMMIT_MSG=$(generate_commit_message "update")
-    sudo git commit -m "$COMMIT_MSG" --quiet
+    git commit -m "$COMMIT_MSG" --quiet
     if [[ "$COMMIT_MSG" =~ ^update:\ [0-9]{4}-[0-9]{2}-[0-9]{2}\ [0-9]{2}:[0-9]{2}:[0-9]{2}$ ]]; then
         echo -e "\n\e[1;36mAuto Commit:\e[0m \e[1;32m$COMMIT_MSG\e[0m\n"
     else
         echo -e "\n\e[1;36mAI Commit:\e[0m \e[1;32m$COMMIT_MSG\e[0m\n"
     fi
-    sudo GIT_SSH_COMMAND="ssh -i $USER_HOME/.ssh/id_ed25519 -o IdentitiesOnly=yes" \
-         git push origin main --force
+    GIT_SSH_COMMAND="ssh -i $USER_HOME/.ssh/id_ed25519 -o IdentitiesOnly=yes" \
+        git push origin main --force
 fi
 
 echo "Done."

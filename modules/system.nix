@@ -176,6 +176,17 @@
   services.input-remapper.enable = true;
 
   security.polkit.enable = true;
+  security.sudo.extraRules = [
+    {
+      users = [ "vadyanik" ];
+      commands = [
+        {
+          command = "/run/current-system/sw/bin/nixos-rebuild";
+          options = [ "NOPASSWD" ];
+        }
+      ];
+    }
+  ];
 
   nix.gc = {
     automatic = true;

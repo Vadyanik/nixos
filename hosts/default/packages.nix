@@ -2,6 +2,8 @@
 
 {
   environment.systemPackages = with pkgs; [
+    stockfish
+    pychess
     neovim
     ghostty
     git

@@ -46,18 +46,30 @@ in
       cat = "bat";
       cd = "z";
       c = "clear";
+      g = "git";
+      ga = "git add .";
+      gd = "git diff";
+      gp = "git push";
+      gs = "git status";
       grep = "rg";
       la = "eza -la --icons --git";
       ll = "eza -l --icons --git";
       ls = "eza --icons --group-directories-first";
       lt = "eza --tree --icons --level=3";
+      gtree = "git log --graph --decorate --oneline --all";
       mkdir = "mkdir -p";
+      v = "nvim";
+      sh = "start-hyprland";
     };
 
     interactiveShellInit = ''
       export PATH="$HOME/.local/bin:$PATH"
       export PATH="$HOME/.npm-global/bin:$PATH"
       export PATH="$HOME/go/bin:$PATH"
+
+      mkcd() {
+        mkdir -p -- "$1" && cd -- "$1"
+      }
 
       # Comfortable editing.
       bindkey -e

@@ -42,7 +42,6 @@ in
     histFile = "$HOME/.zsh_history";
 
     shellAliases = {
-      claudedsp = "claude --dangerously-skip-permissions";
       cat = "bat";
       cd = "z";
       c = "clear";

@@ -114,5 +114,7 @@
     eza # ls replacement with icons and tree support.
 
     bottom # System monitor.
+
+    kdePackages.kdenlive # Video editor.
   ];
 }

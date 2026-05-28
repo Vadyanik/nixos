@@ -44,6 +44,8 @@
     mpv
     vlc
     jq
+    wineWow64Packages.stagingFull
+    winetricks
     hyprpaper
     zenity
     go

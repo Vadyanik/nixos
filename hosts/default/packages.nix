@@ -118,5 +118,6 @@
     bottom # System monitor.
 
     kdePackages.kdenlive # Video editor.
+    gradia
   ];
 }

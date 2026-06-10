@@ -23,6 +23,7 @@
     tor-browser
     ulauncher
     blockbench
+    android-studio
     whisper-cpp
     quickemu
     dotnet-sdk_8

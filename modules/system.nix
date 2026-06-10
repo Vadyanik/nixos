@@ -84,6 +84,7 @@
   };
 
   programs.virt-manager.enable = true;
+  virtualisation.waydroid.enable = true;
 
   services.mullvad-vpn.enable = true;
   services.logmein-hamachi.enable = true;

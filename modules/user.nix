@@ -42,7 +42,6 @@ in
     histFile = "$HOME/.zsh_history";
 
     shellAliases = {
-      cat = "bat";
       cd = "z";
       c = "clear";
       g = "git";

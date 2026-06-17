@@ -35,6 +35,7 @@
     kdePackages.dolphin
     mpv
     vlc
+    easyeffects
     jq
     wineWow64Packages.stagingFull
     winetricks

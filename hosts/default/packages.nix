@@ -4,6 +4,7 @@
   environment.systemPackages = with pkgs; [
     neovim
     ghostty
+    toilet
     git
     kitty
     rofi
@@ -31,6 +32,7 @@
     ayugram-desktop
     obsidian
     zoom-us
+    ollama
     qview
     kdePackages.dolphin
     mpv

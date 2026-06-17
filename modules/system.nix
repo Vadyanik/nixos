@@ -81,6 +81,7 @@
   programs.virt-manager.enable = true;
   services.mullvad-vpn.enable = true;
   services.logmein-hamachi.enable = true;
+  services.ollama.enable = true;
 
   services.openssh = {
     enable = true;

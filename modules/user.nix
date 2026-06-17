@@ -44,6 +44,8 @@ in
     shellAliases = {
       cd = "z";
       c = "clear";
+      cx = "codex";
+      oc = "opencode";
       g = "git";
       ga = "git add .";
       gd = "git diff";

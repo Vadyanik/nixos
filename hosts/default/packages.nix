@@ -4,6 +4,8 @@
   environment.systemPackages = with pkgs; [
     neovim
     ghostty
+    zellij
+    tmux
     toilet
     git
     kitty

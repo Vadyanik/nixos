@@ -7,6 +7,7 @@
     git
     kitty
     rofi
+    github-cli
     librewolf
     pavucontrol
     opencode

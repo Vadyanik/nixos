@@ -5,6 +5,7 @@
     neovim
     ghostty
     zellij
+    tig
     tmux
     toilet
     git

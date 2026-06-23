@@ -19,6 +19,11 @@
     v4l2loopback
   ];
 
+  programs.appimage = {
+    enable = true;
+    binfmt = true;
+  };
+
   boot.kernelModules = [ "v4l2loopback" ];
 
   boot.extraModprobeConfig = ''

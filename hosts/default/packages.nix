@@ -10,6 +10,7 @@
     toilet
     git
     kitty
+    appimage-run
     rofi
     github-cli
     librewolf

@@ -117,5 +117,6 @@
 
     gradia
     fuse3
+    icu
   ];
 }

@@ -115,5 +115,6 @@
     bottom # System monitor.
 
     gradia
+    fuse3
   ];
 }

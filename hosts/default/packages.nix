@@ -4,6 +4,7 @@
   environment.systemPackages = with pkgs; [
     neovim
     ghostty
+    fastfetch
     zellij
     tig
     hypridle

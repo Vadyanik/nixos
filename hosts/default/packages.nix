@@ -11,6 +11,7 @@
     toilet
     git
     kitty
+    hyprlock
     appimage-run
     rofi
     github-cli

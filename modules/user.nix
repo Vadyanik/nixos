@@ -45,6 +45,7 @@ in
       cd = "z";
       c = "clear";
       cx = "codex";
+      ff = "fastfetch";
       oc = "opencode";
       g = "git";
       ga = "git add .";
@@ -66,6 +67,8 @@ in
       export PATH="$HOME/.local/bin:$PATH"
       export PATH="$HOME/.npm-global/bin:$PATH"
       export PATH="$HOME/go/bin:$PATH"
+
+      fastfetch
 
       mkcd() {
         mkdir -p -- "$1" && cd -- "$1"

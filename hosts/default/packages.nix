@@ -6,6 +6,7 @@
     ghostty
     zellij
     tig
+    hypridle
     tmux
     toilet
     git

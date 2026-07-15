@@ -1,31 +1,28 @@
 { pkgs, ... }:
 
 let
-  xmcl = pkgs.stdenv.mkDerivation {
+  xmcl-app = pkgs.appimageTools.wrapType2 {
     pname = "xmcl";
     version = "0.62.0";
     src = pkgs.fetchurl {
       url = "https://github.com/Voxelum/x-minecraft-launcher/releases/download/v0.62.0/xmcl-0.62.0-x86_64.AppImage";
       sha256 = "sha256-u3HZLTqeDia1gblEn02Xtk3bOwbFanWh2RAJhc4el1U=";
     };
-    nativeBuildInputs = [ pkgs.makeWrapper ];
-    dontUnpack = true;
-    installPhase = ''
-      runHook preInstall
-      install -Dm555 $src $out/share/xmcl/xmcl.AppImage
-      makeWrapper ${pkgs.appimage-run}/bin/appimage-run $out/bin/xmcl \
-        --add-flags $out/share/xmcl/xmcl.AppImage
-      install -Dm644 /dev/stdin $out/share/applications/xmcl.desktop <<'EOF'
-[Desktop Entry]
-Type=Application
-Name=X Minecraft Launcher
-Exec=xmcl %U
-Terminal=false
-Categories=Game;
-StartupWMClass=XMCL
-EOF
-      runHook postInstall
-    '';
+    extraPkgs = pkgs: with pkgs; [
+      libGL libGLU glib nss nspr atk cups libdrm mesa libxkbcommon pango
+      (lib.getLib stdenv.cc.cc) alsa-lib dbus gtk3 expat udev vulkan-loader
+    ];
+  };
+  xmcl = pkgs.writeShellScriptBin "xmcl" ''
+    exec ${xmcl-app}/bin/xmcl --no-sandbox "$@"
+  '';
+  xmcl-desktop = pkgs.makeDesktopItem {
+    name = "xmcl";
+    desktopName = "X Minecraft Launcher";
+    exec = "xmcl %U";
+    terminal = false;
+    categories = [ "Game" ];
+    startupWMClass = "XMCL";
   };
 in
 {
@@ -54,7 +51,9 @@ in
     tor-browser
     ulauncher
     blockbench
+    xmcl-app
     xmcl
+    xmcl-desktop
     quickemu
     dotnet-sdk_8
     fzf

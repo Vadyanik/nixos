@@ -1,5 +1,33 @@
 { pkgs, ... }:
 
+let
+  xmcl = pkgs.stdenv.mkDerivation {
+    pname = "xmcl";
+    version = "0.62.0";
+    src = pkgs.fetchurl {
+      url = "https://github.com/Voxelum/x-minecraft-launcher/releases/download/v0.62.0/xmcl-0.62.0-x86_64.AppImage";
+      sha256 = "sha256-u3HZLTqeDia1gblEn02Xtk3bOwbFanWh2RAJhc4el1U=";
+    };
+    nativeBuildInputs = [ pkgs.makeWrapper ];
+    dontUnpack = true;
+    installPhase = ''
+      runHook preInstall
+      install -Dm555 $src $out/share/xmcl/xmcl.AppImage
+      makeWrapper ${pkgs.appimage-run}/bin/appimage-run $out/bin/xmcl \
+        --add-flags $out/share/xmcl/xmcl.AppImage
+      install -Dm644 /dev/stdin $out/share/applications/xmcl.desktop <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=X Minecraft Launcher
+Exec=xmcl %U
+Terminal=false
+Categories=Game;
+StartupWMClass=XMCL
+EOF
+      runHook postInstall
+    '';
+  };
+in
 {
   environment.systemPackages = with pkgs; [
     neovim
@@ -26,6 +54,7 @@
     tor-browser
     ulauncher
     blockbench
+    xmcl
     quickemu
     dotnet-sdk_8
     fzf

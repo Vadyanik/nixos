@@ -61,6 +61,7 @@
   services.xserver.xkb = {
     layout = "us";
     variant = "";
+    options = "caps:swapescape";
   };
 
   services.xserver.videoDrivers = [ "nvidia" ];

@@ -129,6 +129,7 @@
 
   fonts.packages = with pkgs; [
     nerd-fonts.jetbrains-mono
+    open-dyslexic
   ];
 
   programs.hyprland.enable = true;

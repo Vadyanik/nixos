@@ -149,5 +149,6 @@ in
     gradia
     fuse3
     icu
+    ngrok
   ];
 }

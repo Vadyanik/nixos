@@ -141,6 +141,7 @@ in
     tectonic # LaTeX engine for formula rendering.
     mermaid-cli # Mermaid diagram rendering.
 
+    anki
     bat # Syntax-highlighted cat replacement used in previews.
     eza # ls replacement with icons and tree support.
 

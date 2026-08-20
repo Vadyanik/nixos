@@ -51,6 +51,7 @@ in
     tor-browser
     ulauncher
     blockbench
+    blender
     xmcl-app
     xmcl
     xmcl-desktop

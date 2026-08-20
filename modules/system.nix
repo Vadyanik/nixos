@@ -85,6 +85,7 @@
   };
 
   programs.virt-manager.enable = true;
+  virtualisation.docker.enable = true;
   services.mullvad-vpn.enable = true;
   services.logmein-hamachi.enable = true;
   services.ollama.enable = true;

@@ -29,6 +29,7 @@ in
       "wheel"
       "libvirtd"
       "kvm"
+      "docker"
     ];
     packages = with pkgs; [ ];
   };

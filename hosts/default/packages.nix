@@ -150,6 +150,7 @@ in
     gradia
     fuse3
     icu
+    docker
     ngrok
   ];
 }

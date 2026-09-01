@@ -42,6 +42,7 @@ in
     rofi
     github-cli
     librewolf
+    firefox
     pavucontrol
     opencode
     chromium

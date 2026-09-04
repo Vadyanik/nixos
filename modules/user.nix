@@ -179,6 +179,13 @@ in
     "x-scheme-handler/about" = "librewolf.desktop";
     "x-scheme-handler/unknown" = "librewolf.desktop";
     "inode/directory" = "org.kde.dolphin.desktop";
+    "image/avif" = "com.interversehq.qView.desktop";
+    "image/bmp" = "com.interversehq.qView.desktop";
+    "image/gif" = "com.interversehq.qView.desktop";
+    "image/jpeg" = "com.interversehq.qView.desktop";
+    "image/png" = "com.interversehq.qView.desktop";
+    "image/tiff" = "com.interversehq.qView.desktop";
+    "image/webp" = "com.interversehq.qView.desktop";
   };
 
   systemd.user.services.polkit-gnome-authentication-agent-1 = {

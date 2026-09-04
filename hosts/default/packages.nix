@@ -149,7 +149,6 @@ in
 
     bottom # System monitor.
 
-    gradia
     fuse3
     icu
     docker

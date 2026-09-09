@@ -153,5 +153,6 @@ in
     icu
     docker
     ngrok
+    localsend
   ];
 }

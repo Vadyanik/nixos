@@ -154,5 +154,6 @@ in
     docker
     ngrok
     localsend
+    rclone
   ];
 }

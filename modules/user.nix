@@ -62,6 +62,7 @@ in
       mkdir = "mkdir -p";
       v = "nvim";
       sh = "start-hyprland";
+      unzip = "unzip -d";
     };
 
     interactiveShellInit = ''

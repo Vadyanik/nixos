@@ -155,5 +155,9 @@ in
     ngrok
     localsend
     rclone
+    pandoc
+    ffmpeg
+    imagemagick
+    libreoffice
   ];
 }

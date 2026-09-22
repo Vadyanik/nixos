@@ -159,5 +159,7 @@ in
     ffmpeg
     imagemagick
     libreoffice
+    cliphist
+    wl-clipboard
   ];
 }

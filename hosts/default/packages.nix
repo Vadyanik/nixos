@@ -71,7 +71,33 @@ in
     zoom-us
     ollama
     qview
+    glib
+    dconf
+    at-spi2-core
+    gsettings-desktop-schemas
     kdePackages.dolphin
+    kdePackages.kservice
+    kdePackages.dolphin-plugins
+    kdePackages.kio-extras
+    kdePackages.kio-admin
+    kdePackages.kio-fuse
+    kdePackages.ark
+    kdePackages.kfind
+    kdePackages.filelight
+    kdePackages.konsole
+    kdePackages.okular
+    kdePackages.kate
+    kdePackages.ffmpegthumbs
+    kdePackages.kdegraphics-thumbnailers
+    kdePackages.kimageformats
+    kdePackages.qtimageformats
+    kdePackages.baloo-widgets
+    samba
+    cifs-utils
+    nfs-utils
+    sshfs
+    p7zip
+    unrar
     mpv
     vlc
     easyeffects
@@ -79,6 +105,9 @@ in
     wineWow64Packages.stagingFull
     winetricks
     hyprpaper
+    awww
+    matugen
+    (import ../../packages/space-wallpaper/package.nix { inherit pkgs; })
     zenity
     go
 

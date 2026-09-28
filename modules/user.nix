@@ -15,6 +15,7 @@ in
 
   environment.sessionVariables = {
     BROWSER = "librewolf";
+    NIXOS_OZONE_WL = "1";
     PATH = [
       "$HOME/.local/bin"
     ];
@@ -30,6 +31,8 @@ in
       "libvirtd"
       "kvm"
       "docker"
+      "input"
+      "uinput"
     ];
     packages = with pkgs; [ ];
   };
@@ -185,9 +188,72 @@ in
     "image/gif" = "com.interversehq.qView.desktop";
     "image/jpeg" = "com.interversehq.qView.desktop";
     "image/png" = "com.interversehq.qView.desktop";
+    "image/svg+xml" = "com.interversehq.qView.desktop";
     "image/tiff" = "com.interversehq.qView.desktop";
     "image/webp" = "com.interversehq.qView.desktop";
+
+    "application/pdf" = "okularApplication_pdf.desktop";
+    "application/epub+zip" = "okularApplication_epub.desktop";
+    "application/x-cbr" = "okularApplication_comicbook.desktop";
+    "application/x-cbz" = "okularApplication_comicbook.desktop";
+
+    "text/plain" = "org.kde.kate.desktop";
+    "text/markdown" = "org.kde.kate.desktop";
+    "application/json" = "org.kde.kate.desktop";
+    "application/xml" = "org.kde.kate.desktop";
+
+    "application/msword" = "writer.desktop";
+    "application/rtf" = "writer.desktop";
+    "application/vnd.oasis.opendocument.text" = "writer.desktop";
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document" = "writer.desktop";
+    "application/vnd.ms-excel" = "calc.desktop";
+    "application/vnd.oasis.opendocument.spreadsheet" = "calc.desktop";
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" = "calc.desktop";
+    "text/csv" = "calc.desktop";
+    "application/vnd.ms-powerpoint" = "impress.desktop";
+    "application/vnd.oasis.opendocument.presentation" = "impress.desktop";
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation" = "impress.desktop";
+
+    "application/zip" = "org.kde.ark.desktop";
+    "application/x-7z-compressed" = "org.kde.ark.desktop";
+    "application/x-bzip2" = "org.kde.ark.desktop";
+    "application/x-gzip" = "org.kde.ark.desktop";
+    "application/x-rar" = "org.kde.ark.desktop";
+    "application/x-tar" = "org.kde.ark.desktop";
+    "application/x-xz" = "org.kde.ark.desktop";
+    "application/zstd" = "org.kde.ark.desktop";
+
+    "audio/aac" = "vlc.desktop";
+    "audio/flac" = "vlc.desktop";
+    "audio/mp4" = "vlc.desktop";
+    "audio/mpeg" = "vlc.desktop";
+    "audio/ogg" = "vlc.desktop";
+    "audio/x-wav" = "vlc.desktop";
+    "video/mp4" = "vlc.desktop";
+    "video/mpeg" = "vlc.desktop";
+    "video/quicktime" = "vlc.desktop";
+    "video/webm" = "vlc.desktop";
+    "video/x-flv" = "vlc.desktop";
+    "video/x-matroska" = "vlc.desktop";
+    "video/x-msvideo" = "vlc.desktop";
   };
+
+  environment.etc."xdg/dolphinrc".text = ''
+    [ContextMenu]
+    ShowCopyMoveMenu=true
+
+    [General]
+    BrowseThroughArchives=true
+    OpenExternallyCalledFolderInNewTab=true
+    ShowFullPath=true
+    ShowFullPathInTitlebar=true
+    ShowToolTips=true
+    ShowZoomSlider=true
+    UseTabForSwitchingSplitView=true
+
+    [VersionControl]
+    enabledPlugins=Git
+  '';
 
   systemd.user.services.polkit-gnome-authentication-agent-1 = {
     description = "polkit-gnome-authentication-agent-1";
@@ -201,5 +267,15 @@ in
       RestartSec = 1;
       TimeoutStopSec = 10;
     };
+  };
+
+  programs.nix-ld = {
+    enable = true;
+
+    libraries = with pkgs; [
+      xorg.libXtst
+      xorg.libX11
+      xorg.libXi
+    ];
   };
 }

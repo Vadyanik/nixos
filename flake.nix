@@ -10,6 +10,8 @@
     };
 
     awww.url = "git+https://codeberg.org/LGFae/awww";
+
+    codex-desktop-linux.url = "github:ilysenko/codex-desktop-linux";
   };
 
   outputs =
@@ -17,6 +19,7 @@
       self,
       nixpkgs,
       spicetify-nix,
+      codex-desktop-linux,
       ...
     }@inputs:
     {
@@ -25,6 +28,15 @@
         modules = [
           ./hosts/default/configuration.nix
           spicetify-nix.nixosModules.default
+          codex-desktop-linux.nixosModules.default
+          {
+            programs.codexDesktopLinux = {
+              enable = true;
+              computerUseUi.enable = true;
+            };
+            programs.ydotool.enable = true;
+            users.users.vadyanik.extraGroups = [ "ydotool" ];
+          }
         ];
       };
     };

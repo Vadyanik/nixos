@@ -24,6 +24,8 @@
     binfmt = true;
   };
 
+  hardware.uinput.enable = true;
+
   boot.kernelModules = [ "v4l2loopback" ];
 
   boot.extraModprobeConfig = ''
@@ -177,8 +179,25 @@
   services.flatpak.enable = true;
 
   services.input-remapper.enable = true;
+  services.udisks2.enable = true;
 
   security.polkit.enable = true;
+  security.rtkit.enable = true;
+
+  services.udev.extraRules = ''
+    ACTION=="add", SUBSYSTEM=="block", ENV{ID_FS_UUID}=="4B3D-3B24", TAG+="systemd", ENV{SYSTEMD_WANTS}+="home-vadyanik-PocketBook.mount"
+  '';
+
+  systemd.mounts = [
+    {
+      what = "/dev/disk/by-uuid/4B3D-3B24";
+      where = "/home/vadyanik/PocketBook";
+      type = "vfat";
+      options = "uid=1000,gid=100,umask=022,iocharset=utf8";
+      unitConfig.BindsTo = "dev-disk-by\\x2duuid-4B3D\\x2d3B24.device";
+    }
+  ];
+
   security.sudo.extraRules = [
     {
       users = [ "vadyanik" ];

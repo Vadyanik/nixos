@@ -27,6 +27,7 @@ let
 in
 {
   environment.systemPackages = with pkgs; [
+    # vnix:start
     neovim
     ghostty
     fastfetch
@@ -190,5 +191,7 @@ in
     libreoffice
     cliphist
     wl-clipboard
+    uv
+    # vnix:end
   ];
 }

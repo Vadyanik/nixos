@@ -214,6 +214,7 @@ in
     uv
     ncspot
     playerctl
+    psst
     # vnix:end
   ];
 }

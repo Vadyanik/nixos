@@ -213,6 +213,7 @@ in
     wl-clipboard
     uv
     ncspot
+    playerctl
     # vnix:end
   ];
 }

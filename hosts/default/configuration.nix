@@ -6,6 +6,7 @@
     ./packages.nix
     ../../modules/system.nix
     ../../modules/space-wallpaper.nix
+    ../../modules/desktop-widgets.nix
     ../../modules/user.nix
   ];
 

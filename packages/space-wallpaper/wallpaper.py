@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Offline shuffle-bag wallpapers; NASA acquisition is a separate command."""
+"""Offline random wallpaper selection; NASA acquisition is a separate command."""
 
 import argparse
 import contextlib
@@ -12,6 +12,8 @@ import os
 from pathlib import Path
 import random
 import re
+import secrets
+import socket
 import subprocess
 import sys
 import tempfile
@@ -35,12 +37,13 @@ STATE = (
     Path(os.environ.get("XDG_STATE_HOME", str(Path.home() / ".local/state")))
     / "space-wallpaper"
 )
+WORKSPACES = STATE / "workspaces.json"
 CACHE = (
     Path(os.environ.get("XDG_CACHE_HOME", str(Path.home() / ".cache")))
     / "space-wallpaper"
 )
-WAYBAR = (
-    Path(os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config"))) / "waybar"
+PANEL = (
+    Path(os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config"))) / "quickshell" / "bar"
 )
 FONT = (
     Path(os.environ["SPACE_WALLPAPER_FONT"])
@@ -102,37 +105,9 @@ def files():
     )
 
 
-def choose(state, available):
-    available = set(available)
-    current = state.get("current")
-    seen = set(state.get("seen", [])) & available
-    queue = [n for n in state.get("queue", []) if n in available and n not in seen]
-    queue = list(dict.fromkeys(queue))
-    additions = list(available - seen - set(queue))
-    random.shuffle(additions)
-    queue.extend(additions)
-    if not queue:
-        queue = list(available)
-        random.shuffle(queue)
-        seen = set()
-    if not queue:
-        return None, state
-    if len(queue) > 1 and queue[0] == current:
-        queue[0], queue[1] = queue[1], queue[0]
-    # A removed/reintroduced current image must not cause an immediate repeat.
-    if len(available) > 1 and queue == [current]:
-        seen.add(current)
-        queue = list(available - {current})
-        random.shuffle(queue)
-        seen = {current}
-    selected = queue.pop(0)
-    seen.add(selected)
-    return selected, {
-        "current": selected,
-        "queue": queue,
-        "seen": sorted(seen),
-        "changed_at": time.time(),
-    }
+def random_image(available, excluded=()):
+    candidates = sorted(set(available) - set(excluded))
+    return secrets.choice(candidates) if candidates else None
 
 
 def run(args, **kwargs):
@@ -199,12 +174,9 @@ def apply_palette(path):
     try:
         css = path.with_suffix(".css")
         content = css.read_text() if css.exists() else palette(path)
-        atomic(WAYBAR / "colors.css", content)
-        # Waybar monitors imports as well as style.css; touch also supports older builds.
-        if (WAYBAR / "style.css").exists():
-            (WAYBAR / "style.css").touch()
+        atomic(PANEL / "colors.css", content)
     except Exception as error:
-        LOG.warning("Wallpaper installed; previous Waybar theme retained: %s", error)
+        LOG.warning("Wallpaper installed; previous panel theme retained: %s", error)
 
 
 def ellipsize(draw, text, font, width):
@@ -259,6 +231,9 @@ def render_caption(path):
     source_id, record = caption_record(path)
     if not record:
         return path
+    rendered = CACHE / "rendered" / (path.stem + ".bmp")
+    if rendered.exists():
+        return rendered
 
     title_font = (
         ImageFont.truetype(str(FONT), config["title_size"])
@@ -336,7 +311,6 @@ def render_caption(path):
     # BMP is lossless and encodes a 4K frame much faster than photographic PNG.
     # Only the current rendered frame is retained, so its 24 MiB size is bounded.
     image.convert("RGB").save(output, "BMP")
-    rendered = CACHE / "rendered" / (path.stem + ".bmp")
     atomic(rendered, output.getvalue())
     return rendered
 
@@ -350,8 +324,11 @@ def next_wallpaper():
             state = read(STATE / "shuffle.json", {})
             available = files()
             while available:
-                selected, proposed = choose(state, available)
+                selected = random_image(available, {state.get("current")})
+                if not selected:
+                    selected = random_image(available)
                 path = CACHE / selected
+                proposed = {"current": selected, "changed_at": time.time()}
                 try:
                     with Image.open(path) as im:
                         if im.size != tuple(SET["desired_resolution"]):
@@ -368,48 +345,215 @@ def next_wallpaper():
                 return
             # Check writable state before changing the desktop.
             atomic(STATE / "pending.json", json.dumps(proposed))
-            try:
-                displayed = render_caption(path)
-            except Exception as error:
-                LOG.warning(
-                    "Caption rendering failed; using clean wallpaper: %s", error
-                )
-                displayed = path
-            try:
-                run(["awww", "query"], timeout=3)
-            except (subprocess.SubprocessError, OSError):
-                run(
-                    ["systemctl", "--user", "start", "space-wallpaper-daemon.service"],
-                    timeout=10,
-                )
-                for _ in range(40):
-                    try:
-                        run(["awww", "query"], timeout=2)
-                        break
-                    except subprocess.SubprocessError:
-                        time.sleep(0.1)
-                else:
-                    raise RuntimeError("Wallpaper daemon did not become ready")
-            run(
-                [
-                    "awww",
-                    "img",
-                    str(displayed),
-                    "--transition-type",
-                    "fade",
-                    "--transition-duration",
-                    "0.5",
-                    "--transition-fps",
-                    "60",
-                ],
-                timeout=20,
-            )
+            display_wallpaper(path)
             os.replace(STATE / "pending.json", STATE / "shuffle.json")
-            if displayed != path:
-                for old in (CACHE / "rendered").iterdir():
-                    if old != displayed:
-                        old.unlink(missing_ok=True)
-        apply_palette(path)
+
+
+def display_wallpaper(path, transition="fade", duration="0.5", retain=None):
+    try:
+        cached = CACHE / "rendered" / (path.stem + ".bmp")
+        displayed = cached if cached.exists() else render_caption(path)
+    except Exception as error:
+        LOG.warning("Caption rendering failed; using clean wallpaper: %s", error)
+        displayed = path
+    command = [
+        "awww", "img", str(displayed),
+        "--transition-type", transition,
+        "--transition-duration", duration,
+        "--transition-fps", "60",
+        "--transition-bezier", "0.65,0.05,0.36,1",
+    ]
+    try:
+        # Send the transition immediately. A separate `awww query` round trip
+        # here delayed every wallpaper change after Hyprland had already moved.
+        run(command, timeout=20)
+    except (subprocess.SubprocessError, OSError):
+        run(["systemctl", "--user", "start", "space-wallpaper-daemon.service"], timeout=10)
+        for _ in range(40):
+            try:
+                run(["awww", "query"], timeout=2)
+                break
+            except subprocess.SubprocessError:
+                time.sleep(0.1)
+        else:
+            raise RuntimeError("Wallpaper daemon did not become ready")
+        run(command, timeout=20)
+    keep = {displayed}
+    if retain is not None:
+        keep.update(retain)
+    for old in (CACHE / "rendered").glob("*.bmp"):
+        if old not in keep:
+            old.unlink(missing_ok=True)
+    apply_palette(path)
+
+
+def workspace_rendered(assignments):
+    return {
+        CACHE / "rendered" / (Path(item["image"]).stem + ".bmp")
+        for item in assignments.values()
+        if item.get("image")
+    }
+
+
+def active_workspace():
+    return json.loads(run(["hyprctl", "activeworkspace", "-j"]).stdout)
+
+
+def workspace_assignments(state):
+    return state.setdefault("assignments", {})
+
+
+def workspace_initialize():
+    with lock("workspaces"), lock("cache"):
+        workspaces = json.loads(run(["hyprctl", "workspaces", "-j"]).stdout)
+        active = active_workspace()
+        available = files()
+        assignments = {}
+        for workspace in sorted(workspaces, key=lambda item: int(item["id"])):
+            if str(workspace.get("name", "")).startswith("special:"):
+                continue
+            assigned = {item["image"] for item in assignments.values()}
+            selected = random_image(name for name in available if name not in assigned)
+            if not selected:
+                break
+            assignments[str(workspace["id"])] = {"image": selected}
+        active_id = str(active["id"])
+        state = {
+            "assignments": assignments,
+            "last_workspace": active_id,
+            "hyprland_instance": os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"),
+        }
+        record = assignments.get(active_id)
+        if record and (CACHE / record["image"]).exists():
+            for item in assignments.values():
+                render_caption(CACHE / item["image"])
+            display_wallpaper(
+                CACHE / record["image"], "fade", "0.4", workspace_rendered(assignments)
+            )
+        save(WORKSPACES, state)
+        if record:
+            save(STATE / "shuffle.json", {"current": record["image"]})
+
+
+def workspace_activate(workspace_id=None, skip_if_current=False):
+    with lock("workspaces"), lock("cache"):
+        workspace_id = str(workspace_id if workspace_id is not None else active_workspace()["id"])
+        state = read(WORKSPACES, {})
+        assignments = workspace_assignments(state)
+        record = assignments.get(workspace_id)
+        if (
+            skip_if_current
+            and state.get("last_workspace") == workspace_id
+            and record
+            and (CACHE / record.get("image", "")).exists()
+        ):
+            return
+        if not record or not (CACHE / record.get("image", "")).exists():
+            assigned = {item["image"] for item in assignments.values()}
+            selected = random_image(name for name in files() if name not in assigned)
+            if not selected:
+                selected = random_image(files())
+            if not selected:
+                return
+            record = {"image": selected}
+            assignments[workspace_id] = record
+        else:
+            selected = record["image"]
+        previous = state.get("last_workspace")
+        try:
+            before, after = int(previous), int(workspace_id)
+            direction = "right" if after > before else "left" if after < before else "fade"
+        except (TypeError, ValueError):
+            direction = "fade"
+        display_wallpaper(
+            CACHE / record["image"], direction, "0.4", workspace_rendered(assignments)
+        )
+        state["last_workspace"] = workspace_id
+        state["hyprland_instance"] = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")
+        save(WORKSPACES, state)
+        save(STATE / "shuffle.json", {"current": selected})
+
+
+def workspace_next():
+    with lock("workspaces"), lock("cache"):
+        workspace_id = str(active_workspace()["id"])
+        state = read(WORKSPACES, {})
+        assignments = workspace_assignments(state)
+        for item in assignments.values():
+            item.pop("shuffle", None)
+        record = assignments.get(workspace_id)
+        if not record:
+            assigned = {item["image"] for item in assignments.values()}
+            selected = random_image(name for name in files() if name not in assigned)
+            if not selected:
+                selected = random_image(files())
+            if not selected:
+                return
+            record = {"image": selected}
+            assignments[workspace_id] = record
+        assigned = {
+            item["image"] for key, item in assignments.items() if key != workspace_id
+        }
+        available = [
+            name for name in files()
+            if name != record.get("image") and name not in assigned
+        ]
+        if not available:
+            available = [name for name in files() if name != record.get("image")]
+        selected = random_image(available)
+        if not selected:
+            return
+        record["image"] = selected
+        state["last_workspace"] = workspace_id
+        state["hyprland_instance"] = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")
+        display_wallpaper(
+            CACHE / selected, "fade", "0.4", workspace_rendered(assignments)
+        )
+        save(WORKSPACES, state)
+        save(STATE / "shuffle.json", {"current": selected})
+
+
+def workspace_remove(workspace_id):
+    with lock("workspaces"):
+        state = read(WORKSPACES, {})
+        assignments = workspace_assignments(state)
+        assignments.pop(str(workspace_id), None)
+        keep = workspace_rendered(assignments)
+        for old in (CACHE / "rendered").glob("*.bmp"):
+            if old not in keep:
+                old.unlink(missing_ok=True)
+        save(WORKSPACES, state)
+
+
+def watch_workspaces():
+    signature = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")
+    runtime = os.environ.get("XDG_RUNTIME_DIR")
+    if not signature or not runtime:
+        raise RuntimeError("Hyprland session environment is unavailable")
+    event_socket = Path(runtime) / "hypr" / signature / ".socket2.sock"
+    while True:
+        try:
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as connection:
+                connection.connect(str(event_socket))
+                state = read(WORKSPACES, {})
+                if state.get("hyprland_instance") != signature or not state.get("assignments"):
+                    workspace_initialize()
+                else:
+                    workspace_activate()
+                stream = connection.makefile("r", encoding="utf-8")
+                for line in stream:
+                    event, _, data = line.rstrip("\n").partition(">>")
+                    if event == "workspacev2":
+                        workspace_id, _, _ = data.partition(",")
+                        workspace_activate(workspace_id, skip_if_current=True)
+                    elif event == "focusedmonv2":
+                        _, _, workspace_id = data.rpartition(",")
+                        workspace_activate(workspace_id, skip_if_current=True)
+                    elif event == "destroyworkspacev2":
+                        workspace_remove(data.split(",", 1)[0])
+        except (OSError, subprocess.SubprocessError, ValueError) as error:
+            LOG.warning("Workspace wallpaper watcher reconnecting: %s", error)
+            time.sleep(1)
 
 
 def checked_url(url):
@@ -599,6 +743,10 @@ def ingest(item, catalog, downloaded=None):
             "added": time.time(),
         }
         save(STATE / "catalog.json", catalog)
+        with lock("notification"):
+            pending = STATE / "notification.json"
+            count = read(pending, {}).get("count", 0)
+            save(pending, {"count": count + 1})
     try:
         atomic((CACHE / name).with_suffix(".css"), palette(CACHE / name))
     except Exception as error:
@@ -623,6 +771,28 @@ def ingest(item, catalog, downloaded=None):
         *SET["desired_resolution"],
     )
     return "downloaded"
+
+
+def notify_new_wallpapers():
+    with lock("update", blocking=False) as acquired:
+        if not acquired:
+            return
+        with lock("notification"):
+            pending = STATE / "notification.json"
+            count = read(pending, {}).get("count", 0)
+            if not count:
+                return
+            try:
+                # The imported session environment may outlive Hyprland itself.
+                run(["hyprctl", "monitors"], timeout=3)
+                run([
+                    "hyprctl", "notify", "1", "15000", "rgb(89b4fa)",
+                    f"New wallpapers: {count}",
+                ], timeout=3)
+            except (subprocess.SubprocessError, OSError) as error:
+                LOG.info("Wallpaper notification deferred: %s", error)
+                return
+            pending.unlink(missing_ok=True)
 
 
 def update(batch=None):
@@ -742,11 +912,16 @@ def update(batch=None):
             save(STATE / "updater.json", progress)
         finally:
             LOG.info("Update finished: %s; cached=%s", counts, len(files()))
+    notify_new_wallpapers()
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=["next", "update", "theme"])
+    parser.add_argument(
+        "command", choices=["next", "update", "theme", "notify", "workspace"]
+    )
+    parser.add_argument("action", nargs="?")
+    parser.add_argument("action_id", nargs="?")
     parser.add_argument("--batch", type=int)
     args = parser.parse_args()
     logging.basicConfig(
@@ -755,6 +930,23 @@ def main():
     try:
         if args.command == "update":
             update(args.batch)
+        elif args.command == "notify":
+            notify_new_wallpapers()
+        elif args.command == "workspace":
+            actions = {
+                "init": workspace_initialize,
+                "activate": workspace_activate,
+                "next": workspace_next,
+                "remove": lambda: workspace_remove(args.action_id),
+                "watch": watch_workspaces,
+            }
+            if args.action not in actions:
+                parser.error("workspace action must be init, activate, next, remove, or watch")
+            if args.action == "remove" and not args.action_id:
+                parser.error("workspace remove requires an ID")
+            if args.action == "remove":
+                actions["remove"] = lambda: workspace_remove(args.action_id)
+            actions[args.action]()
         elif args.command == "theme":
             state = read(STATE / "shuffle.json", {})
             if state.get("current") in files():

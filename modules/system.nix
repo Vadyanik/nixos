@@ -136,7 +136,7 @@
   ];
 
   programs.hyprland.enable = true;
-  programs.waybar.enable = true;
+  programs.waybar.enable = false;
   services.pulseaudio.enable = false;
 
   services.pipewire = {

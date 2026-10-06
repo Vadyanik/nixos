@@ -15,12 +15,13 @@ pkgs.stdenvNoCC.mkDerivation {
   installPhase = ''
     mkdir -p $out/lib/space-wallpaper $out/bin
     cp wallpaper.py settings.json $out/lib/space-wallpaper/
-    for action in next update; do
+    for action in next update notify workspace; do
       makeWrapper ${python}/bin/python3 $out/bin/wallpaper-$action \
         --add-flags "$out/lib/space-wallpaper/wallpaper.py $action" \
         --set SPACE_WALLPAPER_FONT ${oxanium} \
         --prefix PATH : ${
           pkgs.lib.makeBinPath [
+            pkgs.hyprland
             pkgs.awww
             pkgs.matugen
             pkgs.systemd

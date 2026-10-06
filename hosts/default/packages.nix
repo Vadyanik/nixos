@@ -62,6 +62,17 @@ in
     fzf
     bubblewrap
     cava
+    quickshell
+    lavat
+    cbonsai
+    pipes
+    aalib # Includes aafire.
+    genact
+    unimatrix
+    globe-cli # Executable: globe.
+    (import ../../packages/desktop-widgets/programs.nix { inherit pkgs; }).sortty
+    (import ../../packages/desktop-widgets/programs.nix { inherit pkgs; }).ascii-rain
+    (import ../../packages/desktop-widgets/package.nix { inherit pkgs; })
     bc
     grim
     slurp
@@ -113,6 +124,15 @@ in
     go
 
     (prismlauncher.override {
+      prismlauncher-unwrapped = pkgs.prismlauncher-unwrapped.overrideAttrs (old: {
+        version = "11.1.1";
+        src = pkgs.fetchFromGitHub {
+          owner = "PrismLauncher";
+          repo = "PrismLauncher";
+          tag = "11.1.1";
+          hash = "sha256-vSCiCDatoRnA1vpqLDuelC/2cBCKp+fXGT/O0DYjHuk=";
+        };
+      });
       additionalLibs = with pkgs; [
         nspr
         nss
@@ -192,6 +212,7 @@ in
     cliphist
     wl-clipboard
     uv
+    ncspot
     # vnix:end
   ];
 }

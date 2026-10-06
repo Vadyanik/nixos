@@ -21,7 +21,7 @@ class WallpaperTests(unittest.TestCase):
         self.patches = [
             patch.object(w, "STATE", self.root / "state"),
             patch.object(w, "CACHE", self.root / "cache"),
-            patch.object(w, "WAYBAR", self.root / "waybar"),
+            patch.object(w, "PANEL", self.root / "quickshell" / "bar"),
         ]
         for p in self.patches:
             p.start()
@@ -32,6 +32,26 @@ class WallpaperTests(unittest.TestCase):
         for p in self.patches:
             p.stop()
         self.temp.cleanup()
+
+    def test_notification_waits_for_session_and_is_delivered_once(self):
+        pending = w.STATE / "notification.json"
+        w.save(pending, {"count": 3})
+        with patch.object(w, "run", side_effect=OSError("no Hyprland")):
+            w.notify_new_wallpapers()
+        self.assertEqual(w.read(pending, {}), {"count": 3})
+        with w.lock("update"), patch.object(w, "run") as run:
+            w.notify_new_wallpapers()
+            run.assert_not_called()
+        with patch.object(w, "run") as run:
+            w.notify_new_wallpapers()
+            self.assertEqual("New wallpapers: 3", run.call_args.args[0][-1])
+            self.assertFalse(pending.exists())
+            w.notify_new_wallpapers()
+            self.assertEqual(run.call_count, 2)
+        w.save(pending, {"count": 2})
+        with patch.object(w, "run", side_effect=[None, OSError("notify failed")]):
+            w.notify_new_wallpapers()
+        self.assertTrue(pending.exists())
 
     def test_shuffle_rounds_and_restart(self):
         state = {}
@@ -198,6 +218,7 @@ class WallpaperTests(unittest.TestCase):
             self.assertEqual(w.ingest(item, catalog), "downloaded")
             item["data"][0]["nasa_id"] = "two"
             self.assertEqual(w.ingest(item, catalog), "duplicate")
+        self.assertEqual(w.read(w.STATE / "notification.json", {}), {"count": 1})
         self.assertEqual(len(w.files()), 1)
         old = w.files()[0]
         w.save(w.STATE / "shuffle.json", {"current": old})
@@ -214,6 +235,7 @@ class WallpaperTests(unittest.TestCase):
                 "https://images-assets.nasa.gov/two~orig.jpg"
             )
             self.assertEqual(w.ingest(item, catalog), "downloaded")
+        self.assertEqual(w.read(w.STATE / "notification.json", {}), {"count": 2})
         self.assertTrue((w.CACHE / old).exists())
         self.assertEqual(len(w.files()), 1)
 

@@ -215,6 +215,7 @@ in
     ncspot
     playerctl
     psst
+        zip
     # vnix:end
   ];
 }

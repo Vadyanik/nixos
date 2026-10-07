@@ -110,6 +110,27 @@ def random_image(available, excluded=()):
     return secrets.choice(candidates) if candidates else None
 
 
+def random_titled_image(available, excluded=(), catalog=None):
+    """Choose a title uniformly, then choose one image with that title."""
+    candidates = sorted(set(available) - set(excluded))
+    if not candidates:
+        return None
+    catalog = catalog if catalog is not None else read(STATE / "catalog.json", {})
+    titles_by_hash = {
+        record.get("hash"): record.get("title", "")
+        for record in catalog.values()
+        if record.get("hash")
+    }
+    groups = {}
+    for name in candidates:
+        title = titles_by_hash.get(Path(name).stem, "")
+        # Missing catalog metadata has no known title; keep each image distinct.
+        group = ("title", title) if title else ("image", name)
+        groups.setdefault(group, []).append(name)
+    group = secrets.choice(sorted(groups, key=lambda item: (item[0], item[1])))
+    return secrets.choice(groups[group])
+
+
 def run(args, **kwargs):
     return subprocess.run(
         args,
@@ -324,9 +345,9 @@ def next_wallpaper():
             state = read(STATE / "shuffle.json", {})
             available = files()
             while available:
-                selected = random_image(available, {state.get("current")})
+                selected = random_titled_image(available, {state.get("current")})
                 if not selected:
-                    selected = random_image(available)
+                    selected = random_titled_image(available)
                 path = CACHE / selected
                 proposed = {"current": selected, "changed_at": time.time()}
                 try:
@@ -413,7 +434,7 @@ def workspace_initialize():
             if str(workspace.get("name", "")).startswith("special:"):
                 continue
             assigned = {item["image"] for item in assignments.values()}
-            selected = random_image(name for name in available if name not in assigned)
+            selected = random_titled_image(name for name in available if name not in assigned)
             if not selected:
                 break
             assignments[str(workspace["id"])] = {"image": selected}
@@ -448,17 +469,19 @@ def workspace_activate(workspace_id=None, skip_if_current=False):
             and (CACHE / record.get("image", "")).exists()
         ):
             return
-        if not record or not (CACHE / record.get("image", "")).exists():
-            assigned = {item["image"] for item in assignments.values()}
-            selected = random_image(name for name in files() if name not in assigned)
-            if not selected:
-                selected = random_image(files())
-            if not selected:
-                return
-            record = {"image": selected}
-            assignments[workspace_id] = record
-        else:
-            selected = record["image"]
+        # A workspace visit is a new draw, never a restore of its old image.
+        current = read(STATE / "shuffle.json", {}).get("current")
+        old_image = record.get("image") if record else None
+        available = files()
+        selected = random_titled_image(available, {current, old_image})
+        if not selected:
+            selected = random_titled_image(available, {current})
+        if not selected:
+            selected = random_titled_image(available)
+        if not selected:
+            return
+        record = {"image": selected}
+        assignments[workspace_id] = record
         previous = state.get("last_workspace")
         try:
             before, after = int(previous), int(workspace_id)
@@ -479,31 +502,17 @@ def workspace_next():
         workspace_id = str(active_workspace()["id"])
         state = read(WORKSPACES, {})
         assignments = workspace_assignments(state)
-        for item in assignments.values():
-            item.pop("shuffle", None)
-        record = assignments.get(workspace_id)
-        if not record:
-            assigned = {item["image"] for item in assignments.values()}
-            selected = random_image(name for name in files() if name not in assigned)
-            if not selected:
-                selected = random_image(files())
-            if not selected:
-                return
-            record = {"image": selected}
-            assignments[workspace_id] = record
-        assigned = {
-            item["image"] for key, item in assignments.items() if key != workspace_id
-        }
-        available = [
-            name for name in files()
-            if name != record.get("image") and name not in assigned
-        ]
-        if not available:
-            available = [name for name in files() if name != record.get("image")]
-        selected = random_image(available)
+        record = assignments.get(workspace_id, {})
+        current = read(STATE / "shuffle.json", {}).get("current")
+        available = files()
+        selected = random_titled_image(available, {current, record.get("image")})
+        if not selected:
+            selected = random_titled_image(available, {current})
+        if not selected:
+            selected = random_titled_image(available)
         if not selected:
             return
-        record["image"] = selected
+        assignments[workspace_id] = {"image": selected}
         state["last_workspace"] = workspace_id
         state["hyprland_instance"] = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")
         display_wallpaper(

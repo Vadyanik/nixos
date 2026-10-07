@@ -4,6 +4,7 @@ let
   runtime = pkgs.lib.makeBinPath [
     pkgs.lavat pkgs.cbonsai pkgs.pipes pkgs.aalib pkgs.genact
     pkgs.unimatrix pkgs.bash pkgs.ncurses
+    pkgs.playerctl
   ];
 in pkgs.runCommand "desktop-widgets" { nativeBuildInputs = [ pkgs.makeWrapper ]; } ''
   mkdir -p $out/share/desktop-widgets $out/bin

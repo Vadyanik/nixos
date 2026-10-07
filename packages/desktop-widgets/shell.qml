@@ -1,13 +1,15 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Hyprland
 import Quickshell.Wayland
 
 ShellRoot {
     id: root
     property var bars: []
+    property var spotifyTrack: ({})
     property var frame: ({ cols: 120, rows: 35, lines: [] })
-    readonly property var modes: ["lavat", "cbonsai", "pipes", "aafire", "genact", "unimatrix"]
+    readonly property var modes: ["lavat", "cbonsai", "pipes", "aafire", "genact"]
     property int modeIndex: 0
     function nextMode(step) {
         modeIndex = (modeIndex + step + modes.length) % modes.length;
@@ -17,6 +19,10 @@ ShellRoot {
     }
     function randomMode() {
         nextMode(1 + Math.floor(Math.random() * (modes.length - 1)));
+    }
+    Connections {
+        target: Hyprland
+        function onFocusedWorkspaceChanged() { root.randomMode(); }
     }
     IpcHandler {
         target: "animations"
@@ -72,6 +78,34 @@ ShellRoot {
     readonly property string configDir: "@configDir@"
 
     Process {
+        id: spotifyMetadata
+        command: [
+            "/run/current-system/sw/bin/playerctl", "-p", "spotify", "metadata", "--format",
+            '{"status":"{{status}}","title":"{{title}}","artist":"{{artist}}","artUrl":"{{mpris:artUrl}}"}'
+        ]
+        stdout: SplitParser {
+            onRead: data => {
+                try {
+                    const track = JSON.parse(data);
+                    root.spotifyTrack = track.status === "Playing" && track.title && track.artist ? track : {};
+                } catch (error) {
+                    root.spotifyTrack = {};
+                }
+            }
+        }
+        onExited: (exitCode, exitStatus) => {
+            if (exitCode !== 0) root.spotifyTrack = {};
+            spotifyRefresh.start();
+        }
+        Component.onCompleted: running = true
+    }
+    Timer {
+        id: spotifyRefresh
+        interval: 1500
+        onTriggered: spotifyMetadata.running = true
+    }
+
+    Process {
         command: ["/run/current-system/sw/bin/cava", "-p", root.configDir + "cava.conf"]
         running: true
         stdout: SplitParser {
@@ -95,21 +129,78 @@ ShellRoot {
     }
 
     PanelWindow {
-        id: cavaWindow
+        id: musicCavaWindow
         anchors { left: true; bottom: true }
         readonly property real wallpaperScale: screen.width / root.caption.sourceWidth
-        margins { left: Math.round(root.caption.left * cavaWindow.wallpaperScale); bottom: Math.round(root.caption.bottom * cavaWindow.wallpaperScale) + 24 }
+        readonly property int cavaBarWidth: 26
+        readonly property int cavaBarGap: 5
+        readonly property int cavaBarCount: Math.max(1, Math.floor((width - 8 + cavaBarGap) / (cavaBarWidth + cavaBarGap)))
+        readonly property real artInsetLeft: (width - (cavaBarCount * cavaBarWidth + (cavaBarCount - 1) * cavaBarGap)) / 2
+        readonly property int cavaBottomPadding: 12
+        readonly property int artInsetTop: cavaBottomPadding
+        readonly property int artSize: 84
+        readonly property int musicHeight: root.spotifyTrack.title ? artInsetTop + artSize : 0
+        margins {
+            left: Math.round(root.caption.left * musicCavaWindow.wallpaperScale)
+            bottom: Math.round(root.caption.bottom * musicCavaWindow.wallpaperScale) + 24
+        }
         implicitWidth: Math.round(root.caption.width * wallpaperScale)
-        implicitHeight: 160
+        implicitHeight: 160 + musicHeight
         color: root.backdrop
         exclusionMode: ExclusionMode.Ignore
         WlrLayershell.layer: WlrLayer.Bottom
-        WlrLayershell.namespace: "desktop-cava"
+        WlrLayershell.namespace: "desktop-music-cava"
         mask: Region {}
+
+        Item {
+            y: 0
+            width: parent.width
+            height: musicCavaWindow.musicHeight
+            anchors.horizontalCenter: parent.horizontalCenter
+            visible: musicCavaWindow.musicHeight > 0
+
+            Image {
+                id: albumArt
+                readonly property string sourceUrl: root.spotifyTrack.artUrl || ""
+                source: sourceUrl
+                x: musicCavaWindow.artInsetLeft
+                y: musicCavaWindow.artInsetTop
+                width: musicCavaWindow.artSize
+                height: musicCavaWindow.artSize
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
+                cache: true
+                visible: status === Image.Ready
+            }
+
+            Column {
+                y: albumArt.y + (albumArt.height - height) / 2
+                x: albumArt.x + albumArt.width + 14
+                width: parent.width - x - musicCavaWindow.artInsetLeft
+                spacing: 5
+                Text {
+                    width: parent.width
+                    text: root.spotifyTrack.title || ""
+                    color: root.ink
+                    font.pixelSize: 20
+                    font.weight: Font.DemiBold
+                    elide: Text.ElideRight
+                }
+                Text {
+                    width: parent.width
+                    text: root.spotifyTrack.artist || ""
+                    color: root.ink
+                    opacity: 0.78
+                    font.pixelSize: 16
+                    elide: Text.ElideRight
+                }
+            }
+        }
 
         Canvas {
             id: cavaCanvas
-            anchors.fill: parent
+            anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+            height: 160
             Connections {
                 target: root
                 function onBarsChanged() { cavaCanvas.requestPaint(); }
@@ -120,17 +211,18 @@ ShellRoot {
                 let ctx = getContext("2d");
                 ctx.clearRect(0, 0, width, height);
                 ctx.fillStyle = root.ink.toString();
-                const barWidth = 26;
-                const gap = 5;
-                const count = Math.max(1, Math.floor((width - 8 + gap) / (barWidth + gap)));
-                const left = (width - (count * barWidth + (count - 1) * gap)) / 2;
+                const barWidth = musicCavaWindow.cavaBarWidth;
+                const gap = musicCavaWindow.cavaBarGap;
+                const count = musicCavaWindow.cavaBarCount;
+                const left = musicCavaWindow.artInsetLeft;
+                const baseline = height - musicCavaWindow.cavaBottomPadding;
                 for (let i = 0; i < count; i++) {
                     const start = Math.floor(i * 128 / count);
                     const end = Math.max(start + 1, Math.floor((i + 1) * 128 / count));
                     let level = 0;
                     for (let j = start; j < end; j++) level += root.bars[j] || 0;
                     const h = Math.max(2, Math.min(1000, level / (end - start)) / 1000 * 136);
-                    ctx.fillRect(left + i * (barWidth + gap), 148 - h, barWidth, h);
+                    ctx.fillRect(left + i * (barWidth + gap), baseline - h, barWidth, h);
                 }
             }
         }
@@ -148,11 +240,10 @@ ShellRoot {
 
         MouseArea {
             anchors.fill: parent
-            acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
             cursorShape: Qt.PointingHandCursor
             onClicked: mouse => {
-                if (mouse.button === Qt.MiddleButton) root.randomMode();
-                else root.nextMode(mouse.button === Qt.RightButton ? -1 : 1);
+                root.nextMode(mouse.button === Qt.RightButton ? -1 : 1);
             }
         }
         Canvas {

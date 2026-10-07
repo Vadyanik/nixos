@@ -53,35 +53,71 @@ class WallpaperTests(unittest.TestCase):
             w.notify_new_wallpapers()
         self.assertTrue(pending.exists())
 
-    def test_shuffle_rounds_and_restart(self):
-        state = {}
-        pool = [str(i) for i in range(20)]
-        last = None
-        for _ in range(10):
-            selected = []
-            for _ in pool:
-                name, state = w.choose(json.loads(json.dumps(state)), pool)
-                self.assertNotEqual(name, last)
-                selected.append(name)
-                last = name
-            self.assertEqual(set(selected), set(pool))
+    def test_random_title_groups_choose_title_before_image(self):
+        names = ["a.jpg", "b.jpg", "c.jpg", "d.jpg"]
+        catalog = {
+            "one": {"hash": "a", "title": "Earth Observation"},
+            "two": {"hash": "b", "title": "Earth Observation"},
+            "three": {"hash": "c", "title": "Galaxy"},
+            "four": {"hash": "d", "title": "Galaxy"},
+        }
+        with patch.object(w.secrets, "choice", side_effect=lambda values: values[0]) as choose:
+            self.assertEqual(w.random_titled_image(names, catalog=catalog), "a.jpg")
+            self.assertEqual(choose.call_count, 2)
+        with patch.object(w.secrets, "choice", side_effect=lambda values: values[0]):
+            # Excluding one member leaves the other title peer eligible.
+            self.assertEqual(
+                w.random_titled_image(names, {"a.jpg"}, catalog=catalog), "b.jpg"
+            )
 
-    def test_cache_changes(self):
-        state = {"current": "a", "seen": ["a", "removed"], "queue": ["removed", "b"]}
-        name, state = w.choose(state, ["a", "b", "new"])
-        self.assertEqual(name, "b")
-        self.assertEqual(state["queue"], ["new"])
-        name, state = w.choose(state, ["a", "b", "new"])
-        self.assertEqual(name, "new")
+    def test_workspace_return_draws_again_and_duplicate_events_are_ignored(self):
+        names = [letter * 64 + ".jpg" for letter in "abcde"]
+        for name in names:
+            (w.CACHE / name).touch()
+        w.save(w.WORKSPACES, {
+            "last_workspace": "1",
+            "assignments": {"1": {"image": names[0]}, "2": {"image": names[1]}},
+        })
+        w.save(w.STATE / "shuffle.json", {"current": names[0]})
+        with patch.object(w, "display_wallpaper") as display:
+            w.workspace_activate("2", skip_if_current=True)
+            first = w.read(w.STATE / "shuffle.json", {})["current"]
+            self.assertNotIn(first, names[:2])
+            w.workspace_activate("2", skip_if_current=True)
+            self.assertEqual(display.call_count, 1)
+            w.workspace_activate("1", skip_if_current=True)
+            second = w.read(w.STATE / "shuffle.json", {})["current"]
+            self.assertNotIn(second, {names[0], first})
+            w.workspace_activate("2", skip_if_current=True)
+            third = w.read(w.STATE / "shuffle.json", {})["current"]
+            self.assertNotIn(third, {first, second})
+            self.assertEqual(display.call_count, 3)
 
-    def test_empty_single_and_missing_current(self):
-        self.assertIsNone(w.choose({}, [])[0])
-        self.assertEqual(
-            w.choose({"current": "one", "seen": ["one"]}, ["one"])[0], "one"
-        )
-        self.assertEqual(
-            w.choose({"current": "gone", "queue": ["gone", "a"]}, ["a"])[0], "a"
-        )
+    def test_workspace_display_failure_preserves_state(self):
+        for letter in "abc":
+            (w.CACHE / (letter * 64 + ".jpg")).touch()
+        state = {"last_workspace": "1", "assignments": {"1": {"image": "a" * 64 + ".jpg"}}}
+        w.save(w.WORKSPACES, state)
+        with patch.object(w, "display_wallpaper", side_effect=OSError("unavailable")):
+            with self.assertRaises(OSError):
+                w.workspace_activate("2")
+        self.assertEqual(w.read(w.WORKSPACES, {}), state)
+
+    def test_random_title_groups_handle_empty_single_and_cache_changes(self):
+        self.assertIsNone(w.random_titled_image([], catalog={}))
+        self.assertIsNone(w.random_titled_image(["one"], {"one"}, catalog={}))
+        self.assertEqual(w.random_titled_image(["one"], catalog={}), "one")
+        self.assertEqual(w.random_titled_image(["new"], {"removed"}, catalog={}), "new")
+
+    def test_large_title_pack_has_one_entry_in_group_draw(self):
+        names = [f"earth{i}.jpg" for i in range(10)] + ["galaxy.jpg"]
+        catalog = {name: {"hash": Path(name).stem, "title": "Earth Observation"}
+                   for name in names[:-1]}
+        catalog["galaxy"] = {"hash": "galaxy", "title": "Galaxy"}
+        with patch.object(w.secrets, "choice", side_effect=lambda values: values[0]) as choice:
+            w.random_titled_image(names, catalog=catalog)
+        self.assertEqual(len(choice.call_args_list[0].args[0]), 2)
+        self.assertEqual(len(choice.call_args_list[1].args[0]), 10)
 
     def raw(self, size, color="navy"):
         buf = io.BytesIO()
@@ -264,7 +300,7 @@ class WallpaperTests(unittest.TestCase):
             for _ in range(3):
                 w.next_wallpaper()
                 history.append(w.read(w.STATE / "shuffle.json", {})["current"])
-        self.assertEqual(len(set(history)), 3)
+        self.assertTrue(all(a != b for a, b in zip(history, history[1:])))
 
     def test_backend_failure_does_not_consume_queue(self):
         (w.CACHE / ("a" * 64 + ".jpg")).write_bytes(self.raw((3840, 2160)))

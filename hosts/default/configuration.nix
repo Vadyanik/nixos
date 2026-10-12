@@ -7,6 +7,8 @@
     ../../modules/system.nix
     ../../modules/space-wallpaper.nix
     ../../modules/desktop-widgets.nix
+    ../../modules/niri-desktop.nix
+    ../../modules/poltertype.nix
     ../../modules/user.nix
   ];
 

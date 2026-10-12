@@ -166,6 +166,7 @@ in
     lazygit
 
     python3
+    ruby
     wget
     unzip
 
@@ -216,6 +217,7 @@ in
     playerctl
     psst
         zip
+    zed-editor
     # vnix:end
   ];
 }

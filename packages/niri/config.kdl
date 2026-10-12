@@ -1,0 +1,188 @@
+// Declarative Niri port of the existing Hyprland desktop.
+// Installed as /etc/xdg/niri/config.kdl by modules/niri-desktop.nix.
+// Niri 26.04: https://niri-wm.github.io/niri/Configuration:-Introduction
+input {
+    keyboard {
+        xkb {
+            layout "us,ua,ru"
+            options "caps:swapescape"
+        }
+        track-layout "global"
+    }
+    // natural-scroll is disabled by default, matching Hyprland.
+    touchpad {}
+    mouse {
+        accel-speed 0.0
+    }
+    focus-follows-mouse max-scroll-amount="0%"
+}
+
+// Keep the current monitor's logical size and scale. Other outputs auto-configure.
+output "HDMI-A-1" {
+    mode "3840x2160@60"
+    scale 1.5
+    transform "normal"
+}
+
+cursor {
+    xcursor-theme "macOS"
+    xcursor-size 24
+}
+environment {
+    BROWSER "chromium"
+    XCURSOR_THEME "macOS"
+    XCURSOR_SIZE "24"
+}
+
+layout {
+    gaps 0
+    center-focused-column "never"
+    default-column-width { proportion 0.5; }
+    preset-column-widths {
+        proportion 0.33333
+        proportion 0.5
+        proportion 0.66667
+        proportion 1.0
+    }
+    focus-ring { off; }
+    border {
+        on
+        width 2
+        active-gradient from="#33ccffee" to="#00ff99ee" angle=45
+        inactive-color "#595959aa"
+        urgent-color "#e53935"
+    }
+    shadow {
+        on
+        softness 4
+        spread 0
+        offset x=0 y=0
+        color "#1a1a1aee"
+    }
+}
+prefer-no-csd
+blur {
+    passes 1
+    offset 3
+    noise 0
+    saturation 1.1696
+}
+window-rule {
+    geometry-corner-radius 0
+    clip-to-geometry true
+    opacity 1.0
+    draw-border-with-background false
+    background-effect { blur true; }
+}
+layer-rule {
+    match namespace="^quickshell-bar$"
+    match namespace="^rofi$"
+    background-effect { blur true; }
+}
+
+// Named workspaces preserve Super+1...0 even when empty or reordered.
+workspace "1"
+workspace "2"
+workspace "3"
+workspace "4"
+workspace "5"
+workspace "6"
+workspace "7"
+workspace "8"
+workspace "9"
+workspace "10"
+// The scratchpad helper visits this ordinary workspace and returns on a second press.
+workspace "magic"
+
+// Session setup imports the compositor environment before starting user services.
+spawn-at-startup "desktop-session-start"
+hotkey-overlay { skip-at-startup; }
+screenshot-path null
+
+// Match the existing cubic Bezier curves. Durations approximate Hyprland's speeds.
+animations {
+    workspace-switch {
+        duration-ms 400
+        curve "cubic-bezier" 0.65 0.05 0.36 1
+    }
+    horizontal-view-movement {
+        duration-ms 400
+        curve "cubic-bezier" 0.65 0.05 0.36 1
+    }
+    window-open {
+        duration-ms 480
+        curve "ease-out-cubic"
+        // Slide the application in from below without the default zoom effect.
+        custom-shader r#"
+            vec4 open_color(vec3 coords_geo, vec3 size_geo) {
+                float progress = niri_clamped_progress;
+                float distance = size_geo.y;
+                coords_geo.y -= (1.0 - progress) * distance / max(size_geo.y, 1.0);
+                vec3 coords_tex = niri_geo_to_tex * coords_geo;
+                if (coords_tex.x < 0.0 || coords_tex.x > 1.0
+                        || coords_tex.y < 0.0 || coords_tex.y > 1.0) {
+                    return vec4(0.0);
+                }
+                return texture2D(niri_tex, coords_tex.st);
+            }
+        "#
+    }
+    window-close {
+        duration-ms 400
+        curve "ease-out-cubic"
+        custom-shader r#"
+            vec4 close_color(vec3 coords_geo, vec3 size_geo) {
+                coords_geo.y -= niri_clamped_progress;
+                vec3 coords_tex = niri_geo_to_tex * coords_geo;
+                if (coords_tex.x < 0.0 || coords_tex.x > 1.0
+                        || coords_tex.y < 0.0 || coords_tex.y > 1.0) {
+                    return vec4(0.0);
+                }
+                return texture2D(niri_tex, coords_tex.st);
+            }
+        "#
+    }
+    window-movement {
+        duration-ms 479
+        curve "cubic-bezier" 0.23 1 0.32 1
+    }
+    window-resize {
+        duration-ms 479
+        curve "cubic-bezier" 0.23 1 0.32 1
+    }
+    overview-open-close {
+        duration-ms 400
+        curve "cubic-bezier" 0.65 0.05 0.36 1
+    }
+}
+
+window-rule {
+    match app-id="^flameshot$" title="^flameshot$"
+    open-floating true
+    open-fullscreen true
+}
+window-rule {
+    match app-id="^(chromium|chromium-browser|librewolf|firefox|org.mozilla.firefox)$" title="^Picture-in-Picture$"
+    match title="^Picture in picture$"
+    open-floating true
+    default-column-width { fixed 640; }
+    default-window-height { fixed 360; }
+    default-floating-position x=0 y=0 relative-to="bottom-right"
+}
+window-rule {
+    match title="^cava$" app-id=r#"^com\.mitchellh\.ghostty$"#
+    open-floating true
+    open-fullscreen true
+}
+window-rule {
+    match app-id="^glava$"
+    open-floating true
+    open-focused false
+    default-column-width { proportion 1.0; }
+    default-window-height { fixed 300; }
+    default-floating-position x=0 y=0 relative-to="bottom-left"
+    shadow { off; }
+}
+
+// Shortcuts live in their own file so they can be edited without touching compositor settings.
+include "/etc/xdg/niri/hotkeys.kdl"

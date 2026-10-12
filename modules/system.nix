@@ -39,10 +39,14 @@
 
   networking.networkmanager.enable = true;
 
-  networking.firewall.trustedInterfaces = [
-    "ham0"
-    "virbr0"
-  ];
+  networking.firewall = {
+    trustedInterfaces = [
+      "ham0"
+      "virbr0"
+    ];
+    allowedTCPPorts = [ 53317 ];
+    allowedUDPPorts = [ 53317 ];
+  };
 
   time.timeZone = "Europe/Kyiv";
 
@@ -71,6 +75,9 @@
   hardware.nvidia = {
     modesetting.enable = true;
     open = true;
+    # Preserve GPU memory across suspend/resume using the open driver's kernel notifier.
+    powerManagement.enable = true;
+    moduleParams.nvidia.NVreg_TemporaryFilePath = "/var/tmp";
     nvidiaSettings = true;
     package = config.boot.kernelPackages.nvidiaPackages.stable;
   };

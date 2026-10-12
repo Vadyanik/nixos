@@ -22,14 +22,49 @@ ShellRoot {
     }
     Connections {
         target: Hyprland
-        function onFocusedWorkspaceChanged() { root.randomMode(); }
+        function onFocusedWorkspaceChanged() { if (!Quickshell.env("NIRI_SOCKET")) root.randomMode(); }
     }
+    property var niriWorkspaceId: null
+    Process {
+        id: niriEvents
+        command: ["niri", "msg", "-j", "event-stream"]
+        running: !!Quickshell.env("NIRI_SOCKET")
+        stdout: SplitParser {
+            onRead: data => {
+                try {
+                    const event = JSON.parse(data);
+                    if (event.WorkspaceActivated && event.WorkspaceActivated.focused) {
+                        const id = event.WorkspaceActivated.id;
+                        if (root.niriWorkspaceId !== null && root.niriWorkspaceId !== id) root.randomMode();
+                        root.niriWorkspaceId = id;
+                    }
+                } catch (error) {}
+            }
+        }
+        onExited: { if (Quickshell.env("NIRI_SOCKET")) niriEventRestart.restart(); }
+    }
+    Timer { id: niriEventRestart; interval: 2000; onTriggered: niriEvents.running = true }
     IpcHandler {
         target: "animations"
         function next(): void { root.nextMode(1); }
         function previous(): void { root.nextMode(-1); }
         function random(): void { root.randomMode(); }
         function current(): string { return root.modes[root.modeIndex]; }
+        function layout(): string {
+            return JSON.stringify({
+                zoom: parallax.zoom,
+                x: parallax.offsetX(musicCavaWindow.screen),
+                y: parallax.offsetY(musicCavaWindow.screen),
+                screenWidth: musicCavaWindow.screen.width,
+                screenHeight: musicCavaWindow.screen.height,
+                captionLeft: root.caption.left * musicCavaWindow.wallpaperScale,
+                captionBottom: root.caption.bottom * musicCavaWindow.wallpaperScale,
+                cavaLeft: musicCavaWindow.margins.left,
+                cavaBottom: musicCavaWindow.margins.bottom,
+                animationRight: animationWindow.margins.right,
+                animationBottom: animationWindow.margins.bottom
+            });
+        }
     }
     Timer { id: animationRestart; interval: 100; onTriggered: animation.running = true }
     property var caption: ({ width: 1513, left: 96, bottom: 161, sourceWidth: 3840, title: "", sourceId: "" })
@@ -76,6 +111,8 @@ ShellRoot {
         }
     }
     readonly property string configDir: "@configDir@"
+
+    WallpaperParallax { id: parallax; python: "@python@"; configDir: root.configDir }
 
     Process {
         id: spotifyMetadata
@@ -134,18 +171,18 @@ ShellRoot {
         readonly property real wallpaperScale: screen.width / root.caption.sourceWidth
         readonly property int cavaBarWidth: 26
         readonly property int cavaBarGap: 5
-        readonly property int cavaBarCount: Math.max(1, Math.floor((width - 8 + cavaBarGap) / (cavaBarWidth + cavaBarGap)))
-        readonly property real artInsetLeft: (width - (cavaBarCount * cavaBarWidth + (cavaBarCount - 1) * cavaBarGap)) / 2
+        readonly property int cavaBarCount: Math.max(1, Math.floor((width / parallax.zoom - 8 + cavaBarGap) / (cavaBarWidth + cavaBarGap)))
+        readonly property real artInsetLeft: (width / parallax.zoom - (cavaBarCount * cavaBarWidth + (cavaBarCount - 1) * cavaBarGap)) / 2
         readonly property int cavaBottomPadding: 12
         readonly property int artInsetTop: cavaBottomPadding
         readonly property int artSize: 84
         readonly property int musicHeight: root.spotifyTrack.title ? artInsetTop + artSize : 0
         margins {
-            left: Math.round(root.caption.left * musicCavaWindow.wallpaperScale)
-            bottom: Math.round(root.caption.bottom * musicCavaWindow.wallpaperScale) + 24
+            left: Math.round(root.caption.left * musicCavaWindow.wallpaperScale * parallax.zoom + parallax.offsetX(musicCavaWindow.screen))
+            bottom: Math.round(parallax.bottomMargin(musicCavaWindow.screen, root.caption.bottom * musicCavaWindow.wallpaperScale + 24))
         }
-        implicitWidth: Math.round(root.caption.width * wallpaperScale)
-        implicitHeight: 160 + musicHeight
+        implicitWidth: Math.round(root.caption.width * wallpaperScale * parallax.zoom)
+        implicitHeight: Math.round((160 + musicHeight) * parallax.zoom)
         color: root.backdrop
         exclusionMode: ExclusionMode.Ignore
         WlrLayershell.layer: WlrLayer.Bottom
@@ -153,134 +190,150 @@ ShellRoot {
         mask: Region {}
 
         Item {
-            y: 0
-            width: parent.width
-            height: musicCavaWindow.musicHeight
-            anchors.horizontalCenter: parent.horizontalCenter
-            visible: musicCavaWindow.musicHeight > 0
+            width: musicCavaWindow.width / parallax.zoom
+            height: musicCavaWindow.height / parallax.zoom
+            scale: parallax.zoom
+            transformOrigin: Item.TopLeft
+            Item {
+                y: 0
+                width: parent.width
+                height: musicCavaWindow.musicHeight
+                anchors.horizontalCenter: parent.horizontalCenter
+                visible: musicCavaWindow.musicHeight > 0
 
-            Image {
-                id: albumArt
-                readonly property string sourceUrl: root.spotifyTrack.artUrl || ""
-                source: sourceUrl
-                x: musicCavaWindow.artInsetLeft
-                y: musicCavaWindow.artInsetTop
-                width: musicCavaWindow.artSize
-                height: musicCavaWindow.artSize
-                fillMode: Image.PreserveAspectCrop
-                asynchronous: true
-                cache: true
-                visible: status === Image.Ready
-            }
-
-            Column {
-                y: albumArt.y + (albumArt.height - height) / 2
-                x: albumArt.x + albumArt.width + 14
-                width: parent.width - x - musicCavaWindow.artInsetLeft
-                spacing: 5
-                Text {
-                    width: parent.width
-                    text: root.spotifyTrack.title || ""
-                    color: root.ink
-                    font.pixelSize: 20
-                    font.weight: Font.DemiBold
-                    elide: Text.ElideRight
+                Image {
+                    id: albumArt
+                    readonly property string sourceUrl: root.spotifyTrack.artUrl || ""
+                    source: sourceUrl
+                    x: musicCavaWindow.artInsetLeft
+                    y: musicCavaWindow.artInsetTop
+                    width: musicCavaWindow.artSize
+                    height: musicCavaWindow.artSize
+                    fillMode: Image.PreserveAspectCrop
+                    asynchronous: true
+                    cache: true
+                    visible: status === Image.Ready
                 }
-                Text {
-                    width: parent.width
-                    text: root.spotifyTrack.artist || ""
-                    color: root.ink
-                    opacity: 0.78
-                    font.pixelSize: 16
-                    elide: Text.ElideRight
+
+                Column {
+                    y: albumArt.y + (albumArt.height - height) / 2
+                    x: albumArt.x + albumArt.width + 14
+                    width: parent.width - x - musicCavaWindow.artInsetLeft
+                    spacing: 5
+                    Text {
+                        width: parent.width
+                        text: root.spotifyTrack.title || ""
+                        color: root.ink
+                        font.pixelSize: 20
+                        font.weight: Font.DemiBold
+                        elide: Text.ElideRight
+                    }
+                    Text {
+                        width: parent.width
+                        text: root.spotifyTrack.artist || ""
+                        color: root.ink
+                        opacity: 0.78
+                        font.pixelSize: 16
+                        elide: Text.ElideRight
+                    }
                 }
             }
-        }
 
-        Canvas {
-            id: cavaCanvas
-            anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
-            height: 160
-            Connections {
-                target: root
-                function onBarsChanged() { cavaCanvas.requestPaint(); }
-                function onInkChanged() { cavaCanvas.requestPaint(); }
-            }
-            onWidthChanged: requestPaint()
-            onPaint: {
-                let ctx = getContext("2d");
-                ctx.clearRect(0, 0, width, height);
-                ctx.fillStyle = root.ink.toString();
-                const barWidth = musicCavaWindow.cavaBarWidth;
-                const gap = musicCavaWindow.cavaBarGap;
-                const count = musicCavaWindow.cavaBarCount;
-                const left = musicCavaWindow.artInsetLeft;
-                const baseline = height - musicCavaWindow.cavaBottomPadding;
-                for (let i = 0; i < count; i++) {
-                    const start = Math.floor(i * 128 / count);
-                    const end = Math.max(start + 1, Math.floor((i + 1) * 128 / count));
-                    let level = 0;
-                    for (let j = start; j < end; j++) level += root.bars[j] || 0;
-                    const h = Math.max(2, Math.min(1000, level / (end - start)) / 1000 * 136);
-                    ctx.fillRect(left + i * (barWidth + gap), baseline - h, barWidth, h);
+            Canvas {
+                id: cavaCanvas
+                anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+                height: 160
+                Connections {
+                    target: root
+                    function onBarsChanged() { cavaCanvas.requestPaint(); }
+                    function onInkChanged() { cavaCanvas.requestPaint(); }
+                }
+                onWidthChanged: requestPaint()
+                onPaint: {
+                    let ctx = getContext("2d");
+                    ctx.clearRect(0, 0, width, height);
+                    ctx.fillStyle = root.ink.toString();
+                    const barWidth = musicCavaWindow.cavaBarWidth;
+                    const gap = musicCavaWindow.cavaBarGap;
+                    const count = musicCavaWindow.cavaBarCount;
+                    const left = musicCavaWindow.artInsetLeft;
+                    const baseline = height - musicCavaWindow.cavaBottomPadding;
+                    for (let i = 0; i < count; i++) {
+                        const start = Math.floor(i * 128 / count);
+                        const end = Math.max(start + 1, Math.floor((i + 1) * 128 / count));
+                        let level = 0;
+                        for (let j = start; j < end; j++) level += root.bars[j] || 0;
+                        const h = Math.max(2, Math.min(1000, level / (end - start)) / 1000 * 136);
+                        ctx.fillRect(left + i * (barWidth + gap), baseline - h, barWidth, h);
+                    }
                 }
             }
         }
     }
 
     PanelWindow {
+        id: animationWindow
         anchors { right: true; bottom: true }
-        margins { right: 64; bottom: 64 }
-        implicitWidth: 720
-        implicitHeight: 420
+        margins {
+            right: Math.round(parallax.rightMargin(animationWindow.screen, 64))
+            bottom: Math.round(parallax.bottomMargin(animationWindow.screen, 64))
+        }
+        implicitWidth: Math.round(720 * parallax.zoom)
+        implicitHeight: Math.round(420 * parallax.zoom)
         color: root.backdrop
         exclusionMode: ExclusionMode.Ignore
         WlrLayershell.layer: WlrLayer.Bottom
         WlrLayershell.namespace: "desktop-animations"
 
-        MouseArea {
-            anchors.fill: parent
-            acceptedButtons: Qt.LeftButton | Qt.RightButton
-            cursorShape: Qt.PointingHandCursor
-            onClicked: mouse => {
-                root.nextMode(mouse.button === Qt.RightButton ? -1 : 1);
-            }
-        }
-        Canvas {
-            id: lavaCanvas
-            anchors.fill: parent
-            Connections {
-                target: root
-                function onInkChanged() { lavaCanvas.requestPaint(); }
-            }
-            onPaint: {
-                let ctx = getContext("2d");
-                ctx.clearRect(0, 0, width, height);
-                ctx.fillStyle = root.ink.toString();
-                const cellW = width / root.frame.cols;
-                const cellH = height / root.frame.rows;
-                const ansi = {black: "#252830", red: "#ef8b91", green: "#a6d99a", brown: "#e5c890", blue: "#8cbcf3", magenta: "#cb9eed", cyan: "#91d7df", white: "#e8e8ed"};
-                function color(value) {
-                    if (value === "default" || value === "foreground") return root.ink.toString();
-                    return ansi[value] || (value.length === 6 ? "#" + value : root.ink.toString());
+        Item {
+            width: animationWindow.width / parallax.zoom
+            height: animationWindow.height / parallax.zoom
+            scale: parallax.zoom
+            transformOrigin: Item.TopLeft
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                cursorShape: Qt.PointingHandCursor
+                onClicked: mouse => {
+                    root.nextMode(mouse.button === Qt.RightButton ? -1 : 1);
                 }
-                ctx.textBaseline = "top";
-                for (let y = 0; y < root.frame.lines.length; y++) {
-                    let x = 0;
-                    for (const run of root.frame.lines[y]) {
-                        ctx.font = (run[3] ? "bold " : "") + Math.floor(cellH) + "px monospace";
-                        ctx.fillStyle = color(run[1]);
-                        for (const ch of Array.from(run[0])) {
-                            if (run[2] !== "default") {
-                                ctx.fillStyle = color(run[2]);
-                                ctx.fillRect(x * cellW, y * cellH, cellW, cellH);
-                                ctx.fillStyle = color(run[1]);
+            }
+            Canvas {
+                id: lavaCanvas
+                anchors.fill: parent
+                Connections {
+                    target: root
+                    function onInkChanged() { lavaCanvas.requestPaint(); }
+                }
+                onPaint: {
+                    let ctx = getContext("2d");
+                    ctx.clearRect(0, 0, width, height);
+                    ctx.fillStyle = root.ink.toString();
+                    const cellW = width / root.frame.cols;
+                    const cellH = height / root.frame.rows;
+                    const ansi = {black: "#252830", red: "#ef8b91", green: "#a6d99a", brown: "#e5c890", blue: "#8cbcf3", magenta: "#cb9eed", cyan: "#91d7df", white: "#e8e8ed"};
+                    function color(value) {
+                        if (value === "default" || value === "foreground") return root.ink.toString();
+                        return ansi[value] || (value.length === 6 ? "#" + value : root.ink.toString());
+                    }
+                    ctx.textBaseline = "top";
+                    for (let y = 0; y < root.frame.lines.length; y++) {
+                        let x = 0;
+                        for (const run of root.frame.lines[y]) {
+                            ctx.font = (run[3] ? "bold " : "") + Math.floor(cellH) + "px monospace";
+                            ctx.fillStyle = color(run[1]);
+                            for (const ch of Array.from(run[0])) {
+                                if (run[2] !== "default") {
+                                    ctx.fillStyle = color(run[2]);
+                                    ctx.fillRect(x * cellW, y * cellH, cellW, cellH);
+                                    ctx.fillStyle = color(run[1]);
+                                }
+                                if (ch === "█") ctx.fillRect(x * cellW, y * cellH, cellW, cellH);
+                                else if (ch === "▀") ctx.fillRect(x * cellW, y * cellH, cellW, cellH / 2);
+                                else if (ch === "▄") ctx.fillRect(x * cellW, y * cellH + cellH / 2, cellW, cellH / 2);
+                                else if (ch !== " ") ctx.fillText(ch, x * cellW, y * cellH);
+                                x++;
                             }
-                            if (ch === "█") ctx.fillRect(x * cellW, y * cellH, cellW, cellH);
-                            else if (ch === "▀") ctx.fillRect(x * cellW, y * cellH, cellW, cellH / 2);
-                            else if (ch === "▄") ctx.fillRect(x * cellW, y * cellH + cellH / 2, cellW, cellH / 2);
-                            else if (ch !== " ") ctx.fillText(ch, x * cellW, y * cellH);
-                            x++;
                         }
                     }
                 }

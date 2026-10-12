@@ -1,0 +1,127 @@
+// Keep Alt+Tab available without occupying the existing Quickshell Super+Tab binds.
+recent-windows {
+    highlight {
+        active-color "#33ccffee"
+        urgent-color "#e53935"
+        corner-radius 0
+    }
+    binds {
+        Alt+Tab { next-window; }
+        Alt+Shift+Tab { previous-window; }
+        Alt+grave { next-window filter="app-id"; }
+        Alt+Shift+grave { previous-window filter="app-id"; }
+    }
+}
+
+binds {
+    // Existing Hyprland mappings.
+    Mod+Q repeat=false hotkey-overlay-title="Ghostty" { spawn "ghostty"; }
+    Mod+T repeat=false { spawn "chromium"; }
+    Mod+Tab repeat=false hotkey-overlay-title="Control Center" { spawn "quickshell" "ipc" "-c" "bar" "call" "bar" "toggleControlCenter"; }
+    Mod+Shift+Tab repeat=false hotkey-overlay-title="Notification Center" { spawn "quickshell" "ipc" "-c" "bar" "call" "bar" "openNotifications"; }
+    Mod+C repeat=false { close-window; }
+    Mod+Shift+C repeat=false { spawn "desktop-force-close"; }
+    Mod+E repeat=false { spawn "dolphin"; }
+    Mod+V repeat=false { toggle-window-floating; }
+    Mod+R repeat=false hotkey-overlay-title="Rofi launcher" { spawn "rofi-launcher"; }
+    Mod+F1 repeat=false hotkey-overlay-title="Dictation: start recording" { spawn "stt-toggle" "--start"; }
+    Mod+Shift+F1 repeat=false hotkey-overlay-title="Dictation: transcribe recording" { spawn "stt-toggle" "--stop"; }
+    Mod+Ctrl+F1 repeat=false hotkey-overlay-title="Dictation: cancel" { spawn "stt-toggle" "--cancel"; }
+    Mod+P repeat=false { spawn "desktop-screenshot" "quick"; }
+    Print repeat=false { spawn "desktop-screenshot" "edit"; }
+    Shift+Print repeat=false { spawn "desktop-screenshot" "quick"; }
+    Ctrl+Print repeat=false { screenshot-screen write-to-disk=false; }
+    Alt+Print repeat=false { screenshot-window write-to-disk=false; }
+    Mod+Alt+P repeat=false { spawn "desktop-poltertype"; }
+    Mod+H { focus-column-left; }
+    Mod+J { focus-workspace-down; }
+    Mod+K { focus-workspace-up; }
+    Mod+L { focus-column-right; }
+    Mod+Shift+H { move-column-left; }
+    Mod+Shift+J { move-window-to-workspace-down; }
+    Mod+Shift+K { move-window-to-workspace-up; }
+    Mod+Shift+L { move-column-right; }
+    Mod+Left { focus-column-left; }
+    Mod+Right { focus-column-right; }
+    Mod+Up { focus-window-up; }
+    Mod+Down { focus-window-down; }
+    Mod+1 { focus-workspace "1"; }
+    Mod+2 { focus-workspace "2"; }
+    Mod+3 { focus-workspace "3"; }
+    Mod+4 { focus-workspace "4"; }
+    Mod+5 { focus-workspace "5"; }
+    Mod+6 { focus-workspace "6"; }
+    Mod+7 { focus-workspace "7"; }
+    Mod+8 { focus-workspace "8"; }
+    Mod+9 { focus-workspace "9"; }
+    Mod+0 { focus-workspace "10"; }
+    Mod+Shift+1 { move-window-to-workspace "1"; }
+    Mod+Shift+2 { move-window-to-workspace "2"; }
+    Mod+Shift+3 { move-window-to-workspace "3"; }
+    Mod+Shift+4 { move-window-to-workspace "4"; }
+    Mod+Shift+5 { move-window-to-workspace "5"; }
+    Mod+Shift+6 { move-window-to-workspace "6"; }
+    Mod+Shift+7 { move-window-to-workspace "7"; }
+    Mod+Shift+8 { move-window-to-workspace "8"; }
+    Mod+Shift+9 { move-window-to-workspace "9"; }
+    Mod+Shift+0 { move-window-to-workspace "10"; }
+    Mod+Space repeat=false hotkey-overlay-title="Previous keyboard language; double press third language" { spawn "desktop-mru"; }
+    Mod+Z repeat=false { spawn "desktop-focus" "--app" "codex-desktop" "--launch" "codex-desktop"; }
+    Mod+F repeat=false { maximize-column; }
+    Mod+Shift+F repeat=false { fullscreen-window; }
+    Mod+O repeat=false { spawn "desktop-scratchpad" "toggle"; }
+    Mod+Shift+O repeat=false { spawn "desktop-scratchpad" "move"; }
+    Mod+WheelScrollDown { spawn "quickshell" "ipc" "-c" "bar" "call" "bar" "volumeUp"; }
+    Mod+WheelScrollUp { spawn "quickshell" "ipc" "-c" "bar" "call" "bar" "volumeDown"; }
+    // Niri already provides Mod+left/right mouse drag for move/resize.
+    XF86AudioRaiseVolume allow-when-locked=true { spawn "wpctl" "set-volume" "-l" "1" "@DEFAULT_AUDIO_SINK@" "5%+"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "5%-"; }
+    XF86AudioMute repeat=false allow-when-locked=true { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SINK@" "toggle"; }
+    XF86AudioMicMute repeat=false allow-when-locked=true { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SOURCE@" "toggle"; }
+    XF86MonBrightnessUp allow-when-locked=true { spawn "brightnessctl" "-e4" "-n2" "set" "5%+"; }
+    XF86MonBrightnessDown allow-when-locked=true { spawn "brightnessctl" "-e4" "-n2" "set" "5%-"; }
+    XF86AudioNext repeat=false allow-when-locked=true { spawn "playerctl" "next"; }
+    XF86AudioPause repeat=false allow-when-locked=true { spawn "playerctl" "play-pause"; }
+    XF86AudioPlay repeat=false allow-when-locked=true { spawn "playerctl" "play-pause"; }
+    XF86AudioPrev repeat=false allow-when-locked=true { spawn "playerctl" "previous"; }
+    Ctrl+Alt+Shift+L repeat=false { switch-layout "0"; }
+    Ctrl+Alt+Shift+Mod+L repeat=false { switch-layout "2"; }
+    Mod+B repeat=false { spawn "sh" "-c" "cliphist list | themed-rofi -dmenu -display-columns 2 | cliphist decode | wl-copy"; }
+
+    // Additional Niri operations, avoiding existing shortcuts.
+    Mod+S repeat=false hotkey-overlay-title="Workspace overview" { toggle-overview; }
+    Mod+W repeat=false { toggle-column-tabbed-display; }
+    Mod+Shift+V repeat=false { switch-focus-between-floating-and-tiling; }
+    Mod+Ctrl+F repeat=false { expand-column-to-available-width; }
+    Mod+Ctrl+C repeat=false { center-column; }
+    Mod+Shift+R repeat=false { switch-preset-column-width; }
+    Mod+Ctrl+R repeat=false { switch-preset-window-height; }
+    Mod+Minus { set-column-width "-10%"; }
+    Mod+Equal { set-column-width "+10%"; }
+    Mod+Shift+Minus { set-window-height "-10%"; }
+    Mod+Shift+Equal { set-window-height "+10%"; }
+    Mod+BracketLeft { consume-or-expel-window-left; }
+    Mod+BracketRight { consume-or-expel-window-right; }
+    Mod+Comma { consume-window-into-column; }
+    Mod+Period { expel-window-from-column; }
+    Mod+Ctrl+Left { move-column-left; }
+    Mod+Ctrl+Right { move-column-right; }
+    Mod+Ctrl+Up { move-window-up; }
+    Mod+Ctrl+Down { move-window-down; }
+    Mod+Home { focus-column-first; }
+    Mod+End { focus-column-last; }
+    Mod+Ctrl+Page_Up { move-window-to-workspace-up; }
+    Mod+Ctrl+Page_Down { move-window-to-workspace-down; }
+    Mod+Shift+Page_Up { move-workspace-up; }
+    Mod+Shift+Page_Down { move-workspace-down; }
+    Mod+Shift+Left { focus-monitor-left; }
+    Mod+Shift+Right { focus-monitor-right; }
+    Mod+Shift+Up { focus-monitor-up; }
+    Mod+Shift+Down { focus-monitor-down; }
+    Mod+Ctrl+Shift+Left { move-window-to-monitor-left; }
+    Mod+Ctrl+Shift+Right { move-window-to-monitor-right; }
+    Mod+Ctrl+Shift+Up { move-window-to-monitor-up; }
+    Mod+Ctrl+Shift+Down { move-window-to-monitor-down; }
+    Mod+Slash repeat=false hotkey-overlay-title="Shortcut guide" { spawn "quickshell" "ipc" "-c" "bar" "call" "bar" "toggleHotkeys"; }
+    Mod+Escape repeat=false allow-inhibiting=false { toggle-keyboard-shortcuts-inhibit; }
+}

@@ -26,6 +26,7 @@ import warnings
 from PIL import Image, ImageCms, ImageDraw, ImageFont, ImageOps
 
 LOG = logging.getLogger("space-wallpaper")
+WALLPAPER_MIN_INTERVAL = 60
 BASE = Path(__file__).resolve().parent
 CONFIG = Path(
     os.environ.get("SPACE_WALLPAPER_CONFIG", "/etc/space-wallpaper/settings.json")
@@ -37,7 +38,10 @@ STATE = (
     Path(os.environ.get("XDG_STATE_HOME", str(Path.home() / ".local/state")))
     / "space-wallpaper"
 )
-WORKSPACES = STATE / "workspaces.json"
+# A user manager may retain Hyprland variables when starting Niri.
+IS_NIRI = bool(os.environ.get("NIRI_SOCKET"))
+WORKSPACES = STATE / ("workspaces-niri.json" if IS_NIRI else "workspaces.json")
+NIRI_WORKSPACES = {}
 CACHE = (
     Path(os.environ.get("XDG_CACHE_HOME", str(Path.home() / ".cache")))
     / "space-wallpaper"
@@ -366,11 +370,14 @@ def next_wallpaper():
                 return
             # Check writable state before changing the desktop.
             atomic(STATE / "pending.json", json.dumps(proposed))
-            display_wallpaper(path)
+            if not display_wallpaper(path):
+                (STATE / "pending.json").unlink(missing_ok=True)
+                return
             os.replace(STATE / "pending.json", STATE / "shuffle.json")
 
 
-def display_wallpaper(path, transition="fade", duration="0.5", retain=None):
+def display_wallpaper(path, transition="fade", duration="0.5", retain=None,
+                      output=None, update_theme=True):
     try:
         cached = CACHE / "rendered" / (path.stem + ".bmp")
         displayed = cached if cached.exists() else render_caption(path)
@@ -384,28 +391,51 @@ def display_wallpaper(path, transition="fade", duration="0.5", retain=None):
         "--transition-fps", "60",
         "--transition-bezier", "0.65,0.05,0.36,1",
     ]
-    try:
-        # Send the transition immediately. A separate `awww query` round trip
-        # here delayed every wallpaper change after Hyprland had already moved.
-        run(command, timeout=20)
-    except (subprocess.SubprocessError, OSError):
-        run(["systemctl", "--user", "start", "space-wallpaper-daemon.service"], timeout=10)
-        for _ in range(40):
-            try:
-                run(["awww", "query"], timeout=2)
-                break
-            except subprocess.SubprocessError:
-                time.sleep(0.1)
-        else:
-            raise RuntimeError("Wallpaper daemon did not become ready")
-        run(command, timeout=20)
+    if output:
+        command.extend(["--outputs", output])
+    # Keep one timestamp for all callers (workspace events and manual changes).
+    # Workspace events never move this timestamp; only a successful display does.
+    with lock("wallpaper-change", blocking=False) as acquired:
+        if not acquired:
+            return False
+        last_change = read(STATE / "last-change.json", {}).get("changed_at")
+        if last_change is None:
+            # Migrate the previous shuffle state once. Its mtime was written
+            # after successful wallpaper changes by older versions.
+            shuffle = STATE / "shuffle.json"
+            last_change = read(shuffle, {}).get("changed_at")
+            if last_change is None:
+                try:
+                    last_change = shuffle.stat().st_mtime
+                except FileNotFoundError:
+                    last_change = 0
+        if time.time() - last_change < WALLPAPER_MIN_INTERVAL:
+            return False
+        try:
+            # Send the transition immediately. A separate `awww query` round trip
+            # here delayed every wallpaper change after Hyprland had already moved.
+            run(command, timeout=20)
+        except (subprocess.SubprocessError, OSError):
+            run(["systemctl", "--user", "start", "space-wallpaper-daemon.service"], timeout=10)
+            for _ in range(40):
+                try:
+                    run(["awww", "query"], timeout=2)
+                    break
+                except subprocess.SubprocessError:
+                    time.sleep(0.1)
+            else:
+                raise RuntimeError("Wallpaper daemon did not become ready")
+            run(command, timeout=20)
+        save(STATE / "last-change.json", {"changed_at": time.time()})
     keep = {displayed}
     if retain is not None:
         keep.update(retain)
     for old in (CACHE / "rendered").glob("*.bmp"):
         if old not in keep:
             old.unlink(missing_ok=True)
-    apply_palette(path)
+    if update_theme:
+        apply_palette(path)
+    return True
 
 
 def workspace_rendered(assignments):
@@ -417,6 +447,9 @@ def workspace_rendered(assignments):
 
 
 def active_workspace():
+    if IS_NIRI:
+        workspaces = json.loads(run(["niri", "msg", "-j", "workspaces"]).stdout)
+        return next(item for item in workspaces if item.get("is_focused"))
     return json.loads(run(["hyprctl", "activeworkspace", "-j"]).stdout)
 
 
@@ -425,6 +458,9 @@ def workspace_assignments(state):
 
 
 def workspace_initialize():
+    if IS_NIRI:
+        niri_workspace_sync(json.loads(run(["niri", "msg", "-j", "workspaces"]).stdout))
+        return
     with lock("workspaces"), lock("cache"):
         workspaces = json.loads(run(["hyprctl", "workspaces", "-j"]).stdout)
         active = active_workspace()
@@ -448,15 +484,21 @@ def workspace_initialize():
         if record and (CACHE / record["image"]).exists():
             for item in assignments.values():
                 render_caption(CACHE / item["image"])
-            display_wallpaper(
+            if not display_wallpaper(
                 CACHE / record["image"], "fade", "0.4", workspace_rendered(assignments)
-            )
+            ):
+                return
         save(WORKSPACES, state)
         if record:
             save(STATE / "shuffle.json", {"current": record["image"]})
 
 
 def workspace_activate(workspace_id=None, skip_if_current=False):
+    if IS_NIRI:
+        workspace = active_workspace() if workspace_id is None else NIRI_WORKSPACES.get(str(workspace_id))
+        if workspace:
+            niri_workspace_activate(workspace, skip_if_current=skip_if_current)
+        return
     with lock("workspaces"), lock("cache"):
         workspace_id = str(workspace_id if workspace_id is not None else active_workspace()["id"])
         state = read(WORKSPACES, {})
@@ -472,6 +514,7 @@ def workspace_activate(workspace_id=None, skip_if_current=False):
         # A workspace visit is a new draw, never a restore of its old image.
         current = read(STATE / "shuffle.json", {}).get("current")
         old_image = record.get("image") if record else None
+        previous_record = dict(record) if record else None
         available = files()
         selected = random_titled_image(available, {current, old_image})
         if not selected:
@@ -488,9 +531,19 @@ def workspace_activate(workspace_id=None, skip_if_current=False):
             direction = "right" if after > before else "left" if after < before else "fade"
         except (TypeError, ValueError):
             direction = "fade"
-        display_wallpaper(
+        if not display_wallpaper(
             CACHE / record["image"], direction, "0.4", workspace_rendered(assignments)
-        )
+        ):
+            if previous_record:
+                assignments[workspace_id] = previous_record
+            else:
+                assignments.pop(workspace_id, None)
+            # Remember the event for duplicate suppression. This does not
+            # change the wallpaper or its cooldown timestamp.
+            state["last_workspace"] = workspace_id
+            state["hyprland_instance"] = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")
+            save(WORKSPACES, state)
+            return
         state["last_workspace"] = workspace_id
         state["hyprland_instance"] = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")
         save(WORKSPACES, state)
@@ -498,6 +551,9 @@ def workspace_activate(workspace_id=None, skip_if_current=False):
 
 
 def workspace_next():
+    if IS_NIRI:
+        niri_workspace_activate(active_workspace(), force=True)
+        return
     with lock("workspaces"), lock("cache"):
         workspace_id = str(active_workspace()["id"])
         state = read(WORKSPACES, {})
@@ -515,9 +571,10 @@ def workspace_next():
         assignments[workspace_id] = {"image": selected}
         state["last_workspace"] = workspace_id
         state["hyprland_instance"] = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")
-        display_wallpaper(
+        if not display_wallpaper(
             CACHE / selected, "fade", "0.4", workspace_rendered(assignments)
-        )
+        ):
+            return
         save(WORKSPACES, state)
         save(STATE / "shuffle.json", {"current": selected})
 
@@ -535,6 +592,9 @@ def workspace_remove(workspace_id):
 
 
 def watch_workspaces():
+    if IS_NIRI:
+        watch_niri_workspaces()
+        return
     signature = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")
     runtime = os.environ.get("XDG_RUNTIME_DIR")
     if not signature or not runtime:
@@ -562,6 +622,125 @@ def watch_workspaces():
                         workspace_remove(data.split(",", 1)[0])
         except (OSError, subprocess.SubprocessError, ValueError) as error:
             LOG.warning("Workspace wallpaper watcher reconnecting: %s", error)
+            time.sleep(1)
+
+
+def niri_workspace_activate(workspace, skip_if_current=False, force=False):
+    """Target an output; use workspace position rather than its opaque IPC ID."""
+    output = workspace.get("output")
+    if not output:
+        return
+    workspace_id = str(workspace["id"])
+    focused = workspace.get("is_focused", False)
+    with lock("workspaces-niri"), lock("cache"):
+        state = read(WORKSPACES, {})
+        assignments = workspace_assignments(state)
+        record = assignments.get(workspace_id)
+        last = state.setdefault("last_outputs", {}).get(output, {})
+        if (skip_if_current and not force and last.get("id") == workspace_id
+                and record and (CACHE / record.get("image", "")).exists()):
+            # WorkspacesChanged can reorder a visible workspace without
+            # activating another one; remember its new position immediately.
+            state["last_outputs"][output]["idx"] = workspace.get("idx")
+            # Changing monitor focus must still refresh the shared palette.
+            if focused and state.get("last_workspace") != workspace_id:
+                apply_palette(CACHE / record["image"])
+                state["last_workspace"] = workspace_id
+                save(STATE / "shuffle.json", {"current": record["image"]})
+            save(WORKSPACES, state)
+            return
+        current = read(STATE / "shuffle.json", {}).get("current")
+        available = files()
+        old_image = record.get("image") if record else None
+        previous_record = dict(record) if record else None
+        selected = (random_titled_image(available, {current, old_image})
+                    or random_titled_image(available, {current})
+                    or random_titled_image(available))
+        if not selected:
+            return
+        assignments[workspace_id] = {"image": selected}
+        before, after = last.get("idx"), workspace.get("idx")
+        direction = "fade"
+        if not force and isinstance(before, int) and isinstance(after, int):
+            direction = "bottom" if after > before else "top" if after < before else "fade"
+        if not display_wallpaper(CACHE / selected, direction, "0.4",
+                                 workspace_rendered(assignments), output=output,
+                                 update_theme=focused):
+            if previous_record:
+                assignments[workspace_id] = previous_record
+            else:
+                assignments.pop(workspace_id, None)
+            state["last_outputs"].setdefault(output, {}).update(
+                {"id": workspace_id, "idx": workspace.get("idx")}
+            )
+            state["niri_instance"] = os.environ.get("NIRI_SOCKET")
+            if focused:
+                state["last_workspace"] = workspace_id
+            save(WORKSPACES, state)
+            return
+        state["last_outputs"][output] = {"id": workspace_id, "idx": after}
+        state["niri_instance"] = os.environ.get("NIRI_SOCKET")
+        if focused:
+            state["last_workspace"] = workspace_id
+            save(STATE / "shuffle.json", {"current": selected})
+        save(WORKSPACES, state)
+
+
+def niri_workspace_sync(workspaces):
+    """Consume the complete event snapshot, including removals and reordering."""
+    global NIRI_WORKSPACES
+    NIRI_WORKSPACES = {str(item["id"]): dict(item) for item in workspaces}
+    with lock("workspaces-niri"):
+        state = read(WORKSPACES, {})
+        if state.get("niri_instance") != os.environ.get("NIRI_SOCKET"):
+            state = {"assignments": {}, "niri_instance": os.environ.get("NIRI_SOCKET")}
+        assignments = workspace_assignments(state)
+        state["assignments"] = {key: item for key, item in assignments.items()
+                                if key in NIRI_WORKSPACES}
+        active_outputs = {item.get("output") for item in workspaces if item.get("output")}
+        state["last_outputs"] = {key: item for key, item in state.get("last_outputs", {}).items()
+                                 if key in active_outputs}
+        save(WORKSPACES, state)
+    # Apply each visible output once. Updating the focused output last keeps
+    # the shared Quickshell / Rofi / Ghostty palette attached to its wallpaper.
+    for workspace in sorted(workspaces, key=lambda item: bool(item.get("is_focused"))):
+        if workspace.get("is_active"):
+            niri_workspace_activate(workspace, skip_if_current=True)
+
+
+def niri_workspace_event(event):
+    if "WorkspacesChanged" in event:
+        niri_workspace_sync(event["WorkspacesChanged"]["workspaces"])
+    elif "WorkspaceActivated" in event:
+        activated = event["WorkspaceActivated"]
+        workspace = NIRI_WORKSPACES.get(str(activated["id"]))
+        if workspace is None:
+            return
+        for item in NIRI_WORKSPACES.values():
+            if item.get("output") == workspace.get("output"):
+                item["is_active"] = item["id"] == workspace["id"]
+            if activated.get("focused"):
+                item["is_focused"] = item["id"] == workspace["id"]
+        niri_workspace_activate(workspace, skip_if_current=True)
+
+
+def watch_niri_workspaces():
+    # Official IPC: newline-delimited JSON, initial Ok reply, then a complete
+    # WorkspacesChanged snapshot and incremental WorkspaceActivated events.
+    while True:
+        try:
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as connection:
+                connection.connect(os.environ["NIRI_SOCKET"])
+                connection.sendall(b'"EventStream"\n')
+                with connection.makefile("r", encoding="utf-8") as stream:
+                    for line in stream:
+                        event = json.loads(line)
+                        if "Err" in event:
+                            raise ValueError(f"Niri IPC rejected event stream: {event['Err']}")
+                        niri_workspace_event(event)
+                raise OSError("Niri event stream closed")
+        except (OSError, subprocess.SubprocessError, ValueError) as error:
+            LOG.warning("Niri wallpaper watcher reconnecting: %s", error)
             time.sleep(1)
 
 
@@ -793,11 +972,16 @@ def notify_new_wallpapers():
                 return
             try:
                 # The imported session environment may outlive Hyprland itself.
-                run(["hyprctl", "monitors"], timeout=3)
-                run([
-                    "hyprctl", "notify", "1", "15000", "rgb(89b4fa)",
-                    f"New wallpapers: {count}",
-                ], timeout=3)
+                if IS_NIRI:
+                    run(["niri", "msg", "-j", "outputs"], timeout=3)
+                    run(["notify-send", "--app-name=Space Wallpaper", "--expire-time=15000",
+                         f"New wallpapers: {count}"], timeout=3)
+                else:
+                    run(["hyprctl", "monitors"], timeout=3)
+                    run([
+                        "hyprctl", "notify", "1", "15000", "rgb(89b4fa)",
+                        f"New wallpapers: {count}",
+                    ], timeout=3)
             except (subprocess.SubprocessError, OSError) as error:
                 LOG.info("Wallpaper notification deferred: %s", error)
                 return

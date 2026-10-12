@@ -1,0 +1,28 @@
+/* Continuous terminal-inspired surface; launcher overrides wallpaper colors. */
+* {
+    background: #1f1a1ff7;
+    foreground: #eadfe6;
+    primary: #ebb5ed;
+    secondary: #eadfe6a6;
+    separator: #ebb5ed40;
+    selection: #ebb5ed1a;
+    urgent: #ffb4ab;
+    background-color: transparent;
+    text-color: @foreground;
+    border-color: @separator;
+}
+window { width: 680px; background-color: @background; border: 1px; border-radius: 0px; padding: 22px; }
+mainbox { spacing: 16px; children: [ inputbar, message, listview ]; }
+inputbar { padding: 0px 0px 16px; border: 0px 0px 1px; spacing: 12px; children: [ entry ]; }
+entry { placeholder: "Search…"; placeholder-color: @secondary; }
+message { padding: 0px; }
+textbox { text-color: @secondary; }
+listview { lines: 8; fixed-height: true; spacing: 2px; scrollbar: false; }
+element { padding: 9px 10px; spacing: 12px; border: 0px 0px 0px 2px; border-color: transparent; }
+element normal.normal, element alternate.normal { background-color: transparent; text-color: @foreground; }
+element normal.active, element alternate.active { background-color: transparent; text-color: @primary; }
+element normal.urgent, element alternate.urgent { background-color: transparent; text-color: @urgent; }
+element selected.normal, element selected.active { background-color: @selection; text-color: @primary; border-color: @primary; }
+element selected.urgent { background-color: @selection; text-color: @urgent; border-color: @urgent; }
+element-icon { size: 24px; background-color: inherit; }
+element-text { vertical-align: 0.5; background-color: inherit; text-color: inherit; }

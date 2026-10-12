@@ -1,0 +1,130 @@
+/* RASI Theme - Monochrome Steel (From Waybar) */
+
+* {
+    /* --- Palette extracted from Waybar --- */
+    background:                  #000000;  /* @black */
+    background-alt:              #272727;  /* @shadow-grey */
+    foreground:                  #FBFBFB;  /* @white */
+    selected:                    #A0A0A0;  /* @cool-steel */
+    active:                      #5F5F5F;  /* @charcoal-2 */
+    urgent:                      #FDFDFD;  /* @white-2 (high contrast) */
+
+    /* --- Global Settings --- */
+    border-color:                @selected;
+    separatorcolor:              @active;
+    background-color:            transparent;
+    text-color:                  @foreground;
+}
+
+#window {
+    background-color: @background;
+    border:           2px;
+    padding:          5;
+    border-color:     @selected;
+}
+
+#mainbox {
+    border:  0;
+    padding: 0;
+}
+
+#message {
+    border:       1px dash 0px 0px ;
+    border-color: @separatorcolor;
+    padding:      1px;
+}
+
+#textbox {
+    text-color: @foreground;
+}
+
+#listview {
+    fixed-height: 0;
+    border:       2px dash 0px 0px ;
+    border-color: @separatorcolor;
+    spacing:      2px;
+    scrollbar:    true;
+    padding:      2px 0px 0px ;
+}
+
+#element {
+    border:  0;
+    padding: 5px; /* Немного увеличил отступ для читаемости */
+}
+
+element-text, element-icon {
+    background-color: inherit;
+    text-color:       inherit;
+}
+
+/* --- Normal Items --- */
+#element.normal.normal {
+    background-color: @background;
+    text-color:       @foreground;
+}
+#element.normal.urgent {
+    background-color: @background;
+    text-color:       @urgent;
+}
+#element.normal.active {
+    background-color: @background;
+    text-color:       @selected;
+}
+
+/* --- Selected Items (Инверсия как в Waybar модулях) --- */
+#element.selected.normal {
+    background-color: @selected;
+    text-color:       @background; /* Черный текст на стальном фоне */
+}
+#element.selected.urgent {
+    background-color: @urgent;
+    text-color:       @background;
+}
+#element.selected.active {
+    background-color: @active;
+    text-color:       @foreground;
+}
+
+/* --- Alternate Items (Зебра) --- */
+#element.alternate.normal {
+    background-color: @background-alt;
+    text-color:       @foreground;
+}
+
+#scrollbar {
+    width:        4px;
+    border:       0;
+    handle-width: 8px;
+    padding:      0;
+    handle-color: @selected;
+}
+
+#sidebar {
+    border:       2px dash 0px 0px ;
+    border-color: @separatorcolor;
+}
+
+#button.selected {
+    background-color: @selected;
+    text-color:       @background;
+}
+
+#inputbar {
+    spacing:    0;
+    text-color: @foreground;
+    padding:    1px;
+}
+
+#entry {
+    spacing:    0;
+    text-color: @foreground;
+    placeholder: "Search...";
+    placeholder-color: @active;
+}
+
+#prompt {
+    spacing:    0;
+    text-color: @selected;
+    margin:     0px 0.3em 0em 0em ;
+    font-weight: bold;
+}

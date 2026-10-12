@@ -1,0 +1,14 @@
+configuration {
+    font: "JetBrainsMonoNL Nerd Font 18px";
+    show-icons: true;
+    matching: "fuzzy";
+    sort: true;
+    sorting-method: "fzf";
+    drun-display-format: "{name}";
+    display-drun: "Apps";
+    sidebar-mode: false;
+    inputchange {
+        action: "kb-row-first";
+    }
+}
+@theme "themes/system.rasi"

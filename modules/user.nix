@@ -14,7 +14,7 @@ in
   };
 
   environment.sessionVariables = {
-    BROWSER = "librewolf";
+    BROWSER = "chromium";
     NIXOS_OZONE_WL = "1";
     PATH = [
       "$HOME/.local/bin"
@@ -72,7 +72,29 @@ in
       export PATH="$HOME/.npm-global/bin:$PATH"
       export PATH="$HOME/go/bin:$PATH"
 
-      fastfetch
+      color_index=0
+      colors=(31 35 34 36 34 35 31 95 94 96 94 95 36 36)
+      while IFS= read -r line; do
+        printf '\033[%sm%s\033[0m\n' "''${colors[$((color_index % ''${#colors[@]} + 1))]}" "$line"
+        ((color_index++))
+      done <<'FASTFETCH_ART'
+                      ;                                                         
+                      ED.                                                       
+                      E#Wi                           L.                 G:      
+                      E###G.                         EW:        ,ft t   E#,    :
+                   .. E#fD#W;     f.     ;WE.     .. E##;       t#E Ej  E#t  .GE
+  t      .DD.     ;W, E#t t##L    E#,   i#G      ;W, E###t      t#E E#, E#t j#K;
+  EK:   ,WK.     j##, E#t  .E#K,  E#t  f#f      j##, E#fE#f     t#E E#t E#GK#f  
+  E#t  i#D      G###, E#t    j##f E#t G#i      G###, E#t D#G    t#E E#t E##D.   
+  E#t j#f     :E####, E#t    :E#K:E#jEW,     :E####, E#t  f#E.  t#E E#t E##Wi   
+  E#tL#i     ;W#DG##, E#t   t##L  E##E.     ;W#DG##, E#t   t#K: t#E E#t E#jL#D: 
+  E#WW,     j###DW##, E#t .D#W;   E#G      j###DW##, E#t    ;#W,t#E E#t E#t ,K#j
+  E#K:     G##i,,G##, E#tiW#G.    E#t     G##i,,G##, E#t     :K#D#E E#t E#t   jD
+  ED.    :K#K:   L##, E#K##i      E#t   :K#K:   L##, E#t      .E##E E#t j#t     
+  t     ;##D.    L##, E##D.       EE.  ;##D.    L##, ..         G#E E#t  ,;     
+        ,,,      .,,  E#t         t    ,,,      .,,              fE ,;.         
+                      L:                                          ,             
+FASTFETCH_ART
 
       mkcd() {
         mkdir -p -- "$1" && cd -- "$1"
@@ -176,11 +198,19 @@ in
   };
 
   xdg.mime.defaultApplications = {
-    "text/html" = "librewolf.desktop";
-    "x-scheme-handler/http" = "librewolf.desktop";
-    "x-scheme-handler/https" = "librewolf.desktop";
-    "x-scheme-handler/about" = "librewolf.desktop";
-    "x-scheme-handler/unknown" = "librewolf.desktop";
+    "x-scheme-handler/mailto" = "chromium.desktop";
+    "x-scheme-handler/chrome" = "chromium.desktop";
+    "application/x-extension-xhtml" = "chromium.desktop";
+    "application/x-extension-xht" = "chromium.desktop";
+    "application/x-extension-shtml" = "chromium.desktop";
+    "application/x-extension-html" = "chromium.desktop";
+    "application/x-extension-htm" = "chromium.desktop";
+    "application/xhtml+xml" = "chromium.desktop";
+    "text/html" = "chromium.desktop";
+    "x-scheme-handler/http" = "chromium.desktop";
+    "x-scheme-handler/https" = "chromium.desktop";
+    "x-scheme-handler/about" = "chromium.desktop";
+    "x-scheme-handler/unknown" = "chromium.desktop";
     "inode/directory" = "org.kde.dolphin.desktop";
     "image/avif" = "com.interversehq.qView.desktop";
     "image/bmp" = "com.interversehq.qView.desktop";

@@ -22,6 +22,8 @@ pkgs.stdenvNoCC.mkDerivation {
         --prefix PATH : ${
           pkgs.lib.makeBinPath [
             pkgs.hyprland
+            pkgs.niri
+            pkgs.libnotify
             pkgs.awww
             pkgs.matugen
             pkgs.systemd

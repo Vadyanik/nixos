@@ -1,5 +1,6 @@
 { pkgs, ... }:
 let
+  desktopTools = import ../packages/desktop-session/package.nix { inherit pkgs; };
   widgets = import ../packages/desktop-widgets/package.nix { inherit pkgs; };
 in {
   systemd.user.services.quickshell-widgets = {
@@ -8,7 +9,7 @@ in {
     after = [ "graphical-session.target" ];
     wantedBy = [ "graphical-session.target" ];
     serviceConfig = {
-      ExecStart = "${widgets}/bin/desktop-widgets";
+      ExecStart = "${desktopTools}/bin/desktop-session-env ${widgets}/bin/desktop-widgets";
       Restart = "on-failure";
       RestartSec = 3;
       Environment = "QT_QPA_PLATFORM=wayland";

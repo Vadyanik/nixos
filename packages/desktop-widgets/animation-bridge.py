@@ -18,7 +18,6 @@ MODES = {
     'cbonsai': (90, 30, ['cbonsai', '-l']),
     'pipes': (90, 32, ['pipes.sh', '-p', '5', '-f', '20']),
     'aafire': (90, 32, ['aafire', '-driver', 'curses']),
-    'genact': (80, 28, ['genact']),
     'unimatrix': (90, 32, ['unimatrix', '-s', '95']),
 }
 

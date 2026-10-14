@@ -9,7 +9,7 @@ ShellRoot {
     property var bars: []
     property var spotifyTrack: ({})
     property var frame: ({ cols: 120, rows: 35, lines: [] })
-    readonly property var modes: ["lavat", "cbonsai", "pipes", "aafire", "genact"]
+    readonly property var modes: ["lavat", "cbonsai", "pipes", "aafire"]
     property int modeIndex: 0
     function nextMode(step) {
         modeIndex = (modeIndex + step + modes.length) % modes.length;
@@ -20,11 +20,23 @@ ShellRoot {
     function randomMode() {
         nextMode(1 + Math.floor(Math.random() * (modes.length - 1)));
     }
-    Connections {
-        target: Hyprland
-        function onFocusedWorkspaceChanged() { if (!Quickshell.env("NIRI_SOCKET")) root.randomMode(); }
-    }
     property var niriWorkspaceId: null
+    property bool focusedNiriWorkspaceEmpty: false
+    property bool overviewOpen: false
+    property bool overviewFadeHold: false
+    onOverviewOpenChanged: {
+        if (overviewOpen) {
+            overviewFadeHold = true;
+            overviewFadeTimer.stop();
+        } else if (overviewFadeHold) {
+            overviewFadeTimer.restart();
+        }
+    }
+    Timer {
+        id: overviewFadeTimer
+        interval: 500
+        onTriggered: root.overviewFadeHold = false
+    }
     Process {
         id: niriEvents
         command: ["niri", "msg", "-j", "event-stream"]
@@ -35,15 +47,53 @@ ShellRoot {
                     const event = JSON.parse(data);
                     if (event.WorkspaceActivated && event.WorkspaceActivated.focused) {
                         const id = event.WorkspaceActivated.id;
-                        if (root.niriWorkspaceId !== null && root.niriWorkspaceId !== id) root.randomMode();
                         root.niriWorkspaceId = id;
+                        niriWindows.running = false;
+                        niriWindows.running = true;
                     }
+                    if (event.WindowOpenedOrChanged || event.WindowClosed || event.WindowsChanged) {
+                        niriWindows.running = false;
+                        niriWindows.running = true;
+                    }
+                    if (event.OverviewOpenedOrClosed)
+                        root.overviewOpen = event.OverviewOpenedOrClosed.is_open;
                 } catch (error) {}
             }
         }
         onExited: { if (Quickshell.env("NIRI_SOCKET")) niriEventRestart.restart(); }
     }
     Timer { id: niriEventRestart; interval: 2000; onTriggered: niriEvents.running = true }
+    Process {
+        id: niriWorkspaceState
+        command: ["niri", "msg", "-j", "workspaces"]
+        running: !!Quickshell.env("NIRI_SOCKET")
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const workspaces = JSON.parse(text);
+                    const focused = workspaces.find(workspace => workspace.is_focused);
+                    if (focused) {
+                        root.niriWorkspaceId = focused.id;
+                        niriWindows.running = false;
+                        niriWindows.running = true;
+                    }
+                } catch (error) {}
+            }
+        }
+    }
+    Process {
+        id: niriWindows
+        command: ["niri", "msg", "-j", "windows"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const windows = JSON.parse(text);
+                    root.focusedNiriWorkspaceEmpty = root.niriWorkspaceId !== null &&
+                        !windows.some(window => window.workspace_id === root.niriWorkspaceId);
+                } catch (error) {}
+            }
+        }
+    }
     IpcHandler {
         target: "animations"
         function next(): void { root.nextMode(1); }
@@ -161,6 +211,68 @@ ShellRoot {
             onRead: data => {
                 root.frame = JSON.parse(data);
                 lavaCanvas.requestPaint();
+            }
+        }
+    }
+
+    PanelWindow {
+        id: overviewVignette
+        anchors { left: true; right: true; top: true; bottom: true }
+        visible: !!Quickshell.env("NIRI_SOCKET") && root.focusedNiriWorkspaceEmpty && (root.overviewOpen || root.overviewFadeHold)
+        color: "transparent"
+        exclusionMode: ExclusionMode.Ignore
+        // Keep the vignette attached to the viewport, so neighboring workspaces
+        // do not inherit it while Niri zooms the bottom layer with every card.
+        WlrLayershell.layer: WlrLayer.Top
+        WlrLayershell.namespace: "desktop-overview-vignette"
+        mask: Region {}
+
+        Item {
+            id: vignetteContents
+            // Niri's default overview zoom is 0.5. The top layer stays fixed
+            // to the output, so size the effect to the focused workspace card.
+            width: parent.width * 0.5
+            height: parent.height * 0.5
+            anchors.centerIn: parent
+            opacity: root.overviewOpen ? 1.0 : 0.0
+            Behavior on opacity {
+                NumberAnimation { duration: 450; easing.type: Easing.InOutCubic }
+            }
+            Rectangle {
+                anchors { left: parent.left; right: parent.right; top: parent.top }
+                height: 120
+                gradient: Gradient {
+                    orientation: Gradient.Vertical
+                    GradientStop { position: 0.0; color: Qt.alpha(root.palette.surface, 0.68) }
+                    GradientStop { position: 1.0; color: Qt.alpha(root.palette.surface, 0.0) }
+                }
+            }
+            Rectangle {
+                anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+                height: 120
+                gradient: Gradient {
+                    orientation: Gradient.Vertical
+                    GradientStop { position: 0.0; color: Qt.alpha(root.palette.surface, 0.0) }
+                    GradientStop { position: 1.0; color: Qt.alpha(root.palette.surface, 0.68) }
+                }
+            }
+            Rectangle {
+                anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
+                width: 120
+                gradient: Gradient {
+                    orientation: Gradient.Horizontal
+                    GradientStop { position: 0.0; color: Qt.alpha(root.palette.surface, 0.68) }
+                    GradientStop { position: 1.0; color: Qt.alpha(root.palette.surface, 0.0) }
+                }
+            }
+            Rectangle {
+                anchors { right: parent.right; top: parent.top; bottom: parent.bottom }
+                width: 120
+                gradient: Gradient {
+                    orientation: Gradient.Horizontal
+                    GradientStop { position: 0.0; color: Qt.alpha(root.palette.surface, 0.0) }
+                    GradientStop { position: 1.0; color: Qt.alpha(root.palette.surface, 0.68) }
+                }
             }
         }
     }

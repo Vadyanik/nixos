@@ -36,6 +36,8 @@ environment {
 
 layout {
     gaps 0
+    // Let the overview wallpaper show through workspace backgrounds.
+    background-color "transparent"
     center-focused-column "never"
     default-column-width { proportion 0.5; }
     preset-column-widths {
@@ -75,6 +77,10 @@ window-rule {
     background-effect { blur true; }
 }
 layer-rule {
+    match namespace="^awww-daemon$"
+    place-within-backdrop true
+}
+layer-rule {
     match namespace="^quickshell-bar$"
     match namespace="^rofi$"
     background-effect { blur true; }
@@ -110,35 +116,37 @@ animations {
         curve "cubic-bezier" 0.65 0.05 0.36 1
     }
     window-open {
-        duration-ms 480
-        curve "ease-out-cubic"
+        duration-ms 500
+        curve "linear"
         // Slide the application in from below without the default zoom effect.
         custom-shader r#"
             vec4 open_color(vec3 coords_geo, vec3 size_geo) {
                 float progress = niri_clamped_progress;
-                float distance = size_geo.y;
-                coords_geo.y -= (1.0 - progress) * distance / max(size_geo.y, 1.0);
+                float slide_progress = 1.0 - pow(1.0 - progress, 8.0);
+                coords_geo.y -= 1.0 - slide_progress;
                 vec3 coords_tex = niri_geo_to_tex * coords_geo;
                 if (coords_tex.x < 0.0 || coords_tex.x > 1.0
                         || coords_tex.y < 0.0 || coords_tex.y > 1.0) {
                     return vec4(0.0);
                 }
-                return texture2D(niri_tex, coords_tex.st);
+                return texture2D(niri_tex, coords_tex.st) * progress;
             }
         "#
     }
     window-close {
-        duration-ms 400
-        curve "ease-out-cubic"
+        duration-ms 500
+        curve "linear"
         custom-shader r#"
             vec4 close_color(vec3 coords_geo, vec3 size_geo) {
-                coords_geo.y -= niri_clamped_progress;
+                float progress = niri_clamped_progress;
+                float slide_progress = pow(progress, 5.0);
+                coords_geo.y += slide_progress;
                 vec3 coords_tex = niri_geo_to_tex * coords_geo;
                 if (coords_tex.x < 0.0 || coords_tex.x > 1.0
                         || coords_tex.y < 0.0 || coords_tex.y > 1.0) {
                     return vec4(0.0);
                 }
-                return texture2D(niri_tex, coords_tex.st);
+                return texture2D(niri_tex, coords_tex.st) * (1.0 - progress);
             }
         "#
     }
@@ -154,6 +162,11 @@ animations {
         duration-ms 400
         curve "cubic-bezier" 0.65 0.05 0.36 1
     }
+}
+
+overview {
+    // Keep workspace cards visually unobtrusive while windows remain visible.
+    workspace-shadow { off; }
 }
 
 window-rule {

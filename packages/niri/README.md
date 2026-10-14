@@ -42,6 +42,21 @@ or reordered. The bar shows active or occupied workspaces, hiding the empty
 reserve and the inactive magic workspace. The `magic` workspace supports the scratchpad helper. No application
 is forced onto a particular workspace.
 
+Super+1 through Super+0 request the native `focus-workspace-zoom` action added by
+`workspace-zoom.patch` to the pinned Niri package. The camera zooms out to 65%,
+travels to the named workspace in 330 ms, and zooms back in over 750 ms total.
+This presentation
+does not open Overview or emit an Overview state change. Super+J/K and other
+ordinary workspace actions retain the configured slide animation. A repeated
+request for the active target does not restart the transition; new requests
+start from the current camera position and scale.
+
+`workspace-zoom.py` sends the exact workspace name through IPC, so reordering
+workspaces does not change the number keys. When the running compositor predates
+the installed package, it falls back to ordinary workspace focus. The native
+effect becomes available after starting a session with the patched package;
+switching the NixOS generation cannot replace compositor code already running.
+
 ## Existing shortcuts
 
 `Super` is the main modifier in a normal Niri session. A nested Niri test window

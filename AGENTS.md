@@ -58,3 +58,7 @@ For pull requests, include a short summary, list touched modules, and mention va
 ## Agent-Specific Instructions
 
 Do not create `modules/vnix.nix`. Do not delete or regenerate `hardware-configuration.nix` without explicit user approval. If adding new files, remember flakes evaluate Git-tracked sources by default; stage new files before testing with a normal `--flake` path, or use `path:/etc/nixos` for local validation.
+
+## Visual language
+
+- Keep the Quickshell bar and Control Center terminal-like and text-led. Do not add pills, cards, decorative blocks, or image icons. Do not place overview indicators in the bar. Use a subtle compositor-level visual cue for overview state, such as a wallpaper-palette vignette.

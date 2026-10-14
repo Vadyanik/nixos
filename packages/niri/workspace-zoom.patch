@@ -1,0 +1,582 @@
+--- a/src/layout/monitor.rs
++++ b/src/layout/monitor.rs
+@@ -18,7 +18,7 @@
+     WorkspaceRenderElement,
+ };
+ use super::{compute_overview_zoom, ActivateWindow, HitType, LayoutElement, Options};
+-use crate::animation::{Animation, Clock};
++use crate::animation::{Animation, Clock, Curve};
+ use crate::input::swipe_tracker::SwipeTracker;
+ use crate::niri_render_elements;
+ use crate::render_helpers::renderer::NiriRenderer;
+@@ -93,7 +93,52 @@
+ #[derive(Debug)]
+ pub enum WorkspaceSwitch {
+     Animation(Animation),
++    Zoom(WorkspaceSwitchZoom),
+     Gesture(WorkspaceSwitchGesture),
++}
++
++/// A camera transition independent of the interactive overview state.
++#[derive(Debug)]
++pub struct WorkspaceSwitchZoom {
++    progress: Animation,
++    from_idx: f64,
++    to_idx: f64,
++    from_zoom: f64,
++    /// Ordinary workspace actions interrupt the trip and smoothly restore normal scale.
++    settling: bool,
++}
++
++impl WorkspaceSwitchZoom {
++    fn smoothstep(value: f64) -> f64 {
++        let value = value.clamp(0., 1.);
++        value * value * (3. - 2. * value)
++    }
++
++    fn current_idx(&self) -> f64 {
++        let progress = self.progress.value().clamp(0., 1.);
++        let travel = if self.settling {
++            Self::smoothstep(progress)
++        } else {
++            Self::smoothstep((progress - 0.28) / 0.44)
++        };
++        self.from_idx + (self.to_idx - self.from_idx) * travel
++    }
++
++    fn zoom(&self) -> f64 {
++        let progress = self.progress.value().clamp(0., 1.);
++        if self.settling {
++            return self.from_zoom + (1. - self.from_zoom) * Self::smoothstep(progress);
++        }
++        // Keep the camera still while zooming out, travel, then zoom back in.
++        let far_zoom = 0.65;
++        if progress < 0.28 {
++            self.from_zoom + (far_zoom - self.from_zoom) * Self::smoothstep(progress / 0.28)
++        } else if progress < 0.72 {
++            far_zoom
++        } else {
++            far_zoom + (1. - far_zoom) * Self::smoothstep((progress - 0.72) / 0.28)
++        }
++    }
+ }
+ 
+ #[derive(Debug)]
+@@ -200,6 +245,7 @@
+     pub fn current_idx(&self) -> f64 {
+         match self {
+             WorkspaceSwitch::Animation(anim) => anim.value(),
++            WorkspaceSwitch::Zoom(zoom) => zoom.current_idx(),
+             WorkspaceSwitch::Gesture(gesture) => {
+                 gesture.current_idx + gesture.animation.as_ref().map_or(0., |anim| anim.value())
+             }
+@@ -209,6 +255,7 @@
+     pub fn target_idx(&self) -> f64 {
+         match self {
+             WorkspaceSwitch::Animation(anim) => anim.to(),
++            WorkspaceSwitch::Zoom(zoom) => zoom.to_idx,
+             WorkspaceSwitch::Gesture(gesture) => gesture.current_idx,
+         }
+     }
+@@ -216,6 +263,10 @@
+     pub fn offset(&mut self, delta: isize) {
+         match self {
+             WorkspaceSwitch::Animation(anim) => anim.offset(delta as f64),
++            WorkspaceSwitch::Zoom(zoom) => {
++                zoom.from_idx += delta as f64;
++                zoom.to_idx += delta as f64;
++            }
+             WorkspaceSwitch::Gesture(gesture) => {
+                 if delta >= 0 {
+                     gesture.center_idx += delta as usize;
+@@ -230,7 +281,7 @@
+ 
+     fn is_animation_ongoing(&self) -> bool {
+         match self {
+-            WorkspaceSwitch::Animation(_) => true,
++            WorkspaceSwitch::Animation(_) | WorkspaceSwitch::Zoom(_) => true,
+             WorkspaceSwitch::Gesture(gesture) => gesture.animation.is_some(),
+         }
+     }
+@@ -441,6 +492,8 @@
+     ) {
+         // FIXME: also compute and use current velocity.
+         let current_idx = self.workspace_render_idx();
++        let current_zoom = self.overview_zoom();
++        let was_zoom = matches!(self.workspace_switch, Some(WorkspaceSwitch::Zoom(_)));
+ 
+         if self.active_workspace_idx != idx {
+             self.previous_workspace_id = Some(self.workspaces[self.active_workspace_idx].id());
+@@ -467,7 +520,28 @@
+             }
+             _ => {
+                 // Don't animate if nothing changed.
+-                if prev_active_idx == idx {
++                if prev_active_idx == idx && !was_zoom {
++                    return;
++                }
++                if was_zoom && !self.overview_open && self.overview_progress.is_none() {
++                    self.workspace_switch = Some(WorkspaceSwitch::Zoom(WorkspaceSwitchZoom {
++                        progress: Animation::ease(
++                            self.clock.clone(),
++                            0.,
++                            1.,
++                            0.,
++                            if config.off || self.options.animations.off {
++                                0
++                            } else {
++                                300
++                            },
++                            Curve::Linear,
++                        ),
++                        from_idx: current_idx,
++                        to_idx: idx as f64,
++                        from_zoom: current_zoom,
++                        settling: true,
++                    }));
+                     return;
+                 }
+ 
+@@ -1012,6 +1086,50 @@
+         self.activate_workspace(min(idx, self.workspaces.len() - 1));
+     }
+ 
++    pub fn switch_workspace_zoom(&mut self, idx: usize, auto_back_and_forth: bool) {
++        // Gestures can be rubber-banded beyond the workspace range. Preserve their ordinary
++        // interruption behavior rather than capturing an out-of-range camera origin.
++        if matches!(self.workspace_switch, Some(WorkspaceSwitch::Gesture(_))) {
++            if auto_back_and_forth {
++                self.switch_workspace_auto_back_and_forth(idx);
++            } else {
++                self.switch_workspace(idx);
++            }
++            return;
++        }
++        let mut idx = min(idx, self.workspaces.len() - 1);
++        if idx == self.active_workspace_idx {
++            if auto_back_and_forth {
++                idx = self.previous_workspace_idx().unwrap_or(idx);
++            } else {
++                // Repeating the same destination must not restart the camera trip.
++                return;
++            }
++        }
++        if idx == self.active_workspace_idx {
++            return;
++        }
++        if self.overview_open
++            || self.overview_progress.is_some()
++            || self.options.animations.off
++            || self.options.animations.workspace_switch.0.off
++        {
++            self.switch_workspace(idx);
++            return;
++        }
++        let from_idx = self.workspace_render_idx();
++        let from_zoom = self.overview_zoom();
++        self.previous_workspace_id = Some(self.workspaces[self.active_workspace_idx].id());
++        self.active_workspace_idx = idx;
++        self.workspace_switch = Some(WorkspaceSwitch::Zoom(WorkspaceSwitchZoom {
++            progress: Animation::ease(self.clock.clone(), 0., 1., 0., 750, Curve::Linear),
++            from_idx,
++            to_idx: idx as f64,
++            from_zoom,
++            settling: false,
++        }));
++    }
++
+     pub fn switch_workspace_auto_back_and_forth(&mut self, idx: usize) {
+         let idx = min(idx, self.workspaces.len() - 1);
+ 
+@@ -1036,6 +1154,12 @@
+ 
+     pub fn advance_animations(&mut self) {
+         match &mut self.workspace_switch {
++            Some(WorkspaceSwitch::Zoom(zoom)) => {
++                if zoom.progress.is_done() {
++                    self.workspace_switch = None;
++                    self.clean_up_workspaces();
++                }
++            }
+             Some(WorkspaceSwitch::Animation(anim)) => {
+                 if anim.is_done() {
+                     self.workspace_switch = None;
+@@ -1371,12 +1495,26 @@
+     }
+ 
+     pub fn overview_zoom(&self) -> f64 {
++        if self.overview_progress.is_none() {
++            if let Some(WorkspaceSwitch::Zoom(zoom)) = &self.workspace_switch {
++                return zoom.zoom();
++            }
++        }
+         let progress = self.overview_progress.as_ref().map(|p| p.value());
+         compute_overview_zoom(&self.options, progress)
+     }
+ 
+     pub(super) fn set_overview_progress(&mut self, progress: Option<&super::OverviewProgress>) {
+         let prev_render_idx = self.workspace_render_idx();
++        if progress.is_some() && matches!(self.workspace_switch, Some(WorkspaceSwitch::Zoom(_))) {
++            self.workspace_switch = Some(WorkspaceSwitch::Animation(Animation::new(
++                self.clock.clone(),
++                prev_render_idx,
++                self.active_workspace_idx as f64,
++                0.,
++                self.options.animations.workspace_switch.0,
++            )));
++        }
+         self.overview_progress = progress.map(OverviewProgress::from);
+         let new_render_idx = self.workspace_render_idx();
+ 
+@@ -1562,7 +1700,9 @@
+     pub fn window_under(&self, pos_within_output: Point<f64, Logical>) -> Option<(&W, HitType)> {
+         let (ws, geo) = self.workspace_under(pos_within_output)?;
+ 
+-        if self.overview_progress.is_some() {
++        if self.overview_progress.is_some()
++            || matches!(self.workspace_switch, Some(WorkspaceSwitch::Zoom(_)))
++        {
+             let zoom = self.overview_zoom();
+             let pos_within_workspace = (pos_within_output - geo.loc).downscale(zoom);
+             let (win, hit) = ws.window_under(pos_within_workspace)?;
+@@ -1576,7 +1716,9 @@
+     }
+ 
+     pub fn resize_edges_under(&self, pos_within_output: Point<f64, Logical>) -> Option<ResizeEdge> {
+-        if self.overview_progress.is_some() {
++        if self.overview_progress.is_some()
++            || matches!(self.workspace_switch, Some(WorkspaceSwitch::Zoom(_)))
++        {
+             return None;
+         }
+ 
+@@ -2076,6 +2218,13 @@
+             assert!(after_idx < self.workspaces.len());
+         }
+ 
++        if let Some(WorkspaceSwitch::Zoom(zoom)) = &self.workspace_switch {
++            assert!(zoom.from_idx.is_finite() && zoom.from_idx >= 0.);
++            assert!(zoom.from_idx < self.workspaces.len() as f64);
++            assert!(zoom.to_idx >= 0. && zoom.to_idx < self.workspaces.len() as f64);
++            assert!(zoom.from_zoom.is_finite() && zoom.from_zoom > 0.);
++        }
++
+         assert!(
+             !self.workspaces.last().unwrap().has_windows(),
+             "monitor must have an empty workspace in the end"
+--- a/src/layout/mod.rs
++++ b/src/layout/mod.rs
+@@ -2190,6 +2190,22 @@
+         monitor.switch_workspace(idx);
+     }
+ 
++    pub fn switch_workspace_zoom(&mut self, idx: usize, auto_back_and_forth: bool) {
++        // A dragged tile lives outside monitor workspace geometry and uses the global scale.
++        if self.interactive_move.is_some() {
++            if auto_back_and_forth {
++                self.switch_workspace_auto_back_and_forth(idx);
++            } else {
++                self.switch_workspace(idx);
++            }
++            return;
++        }
++        let Some(monitor) = self.active_monitor() else {
++            return;
++        };
++        monitor.switch_workspace_zoom(idx, auto_back_and_forth);
++    }
++
+     pub fn switch_workspace_auto_back_and_forth(&mut self, idx: usize) {
+         let Some(monitor) = self.active_monitor() else {
+             return;
+--- a/src/input/mod.rs
++++ b/src/input/mod.rs
+@@ -656,6 +656,7 @@
+             touch.cancel(self);
+         }
+ 
++        let workspace_zoom = matches!(&action, Action::FocusWorkspaceZoom(_));
+         match action {
+             Action::Quit(skip_confirmation) => {
+                 if !skip_confirmation && self.niri.exit_confirm_dialog.show() {
+@@ -1456,7 +1457,8 @@
+                     }
+                 }
+             }
+-            Action::FocusWorkspace(reference) => {
++            Action::FocusWorkspace(reference) | Action::FocusWorkspaceZoom(reference) => {
++                let zoom = workspace_zoom;
+                 if let Some((mut output, index)) =
+                     self.niri.find_output_and_workspace_index(reference)
+                 {
+@@ -1468,13 +1470,23 @@
+ 
+                     if let Some(output) = output {
+                         self.niri.layout.focus_output(&output);
+-                        self.niri.layout.switch_workspace(index);
++                        if zoom {
++                            self.niri.layout.switch_workspace_zoom(index, false);
++                        } else {
++                            self.niri.layout.switch_workspace(index);
++                        }
+                         if !self.maybe_warp_cursor_to_focus_centered() {
+                             self.move_cursor_to_output(&output);
+                         }
+                     } else {
+                         let config = &self.niri.config;
+-                        if config.borrow().input.workspace_auto_back_and_forth {
++                        if zoom {
++                            let auto_back_and_forth =
++                                config.borrow().input.workspace_auto_back_and_forth;
++                            self.niri
++                                .layout
++                                .switch_workspace_zoom(index, auto_back_and_forth);
++                        } else if config.borrow().input.workspace_auto_back_and_forth {
+                             self.niri.layout.switch_workspace_auto_back_and_forth(index);
+                         } else {
+                             self.niri.layout.switch_workspace(index);
+--- a/niri-config/src/binds.rs
++++ b/niri-config/src/binds.rs
+@@ -220,6 +220,7 @@
+     #[knuffel(skip)]
+     FocusWorkspaceUpUnderMouse,
+     FocusWorkspace(#[knuffel(argument)] WorkspaceReference),
++    FocusWorkspaceZoom(#[knuffel(argument)] WorkspaceReference),
+     FocusWorkspacePrevious,
+     MoveWindowToWorkspaceDown(#[knuffel(property(name = "focus"), default = true)] bool),
+     MoveWindowToWorkspaceUp(#[knuffel(property(name = "focus"), default = true)] bool),
+@@ -508,6 +509,9 @@
+             niri_ipc::Action::FocusWorkspaceUp {} => Self::FocusWorkspaceUp,
+             niri_ipc::Action::FocusWorkspace { reference } => {
+                 Self::FocusWorkspace(WorkspaceReference::from(reference))
++            }
++            niri_ipc::Action::FocusWorkspaceZoom { reference } => {
++                Self::FocusWorkspaceZoom(WorkspaceReference::from(reference))
+             }
+             niri_ipc::Action::FocusWorkspacePrevious {} => Self::FocusWorkspacePrevious,
+             niri_ipc::Action::MoveWindowToWorkspaceDown { focus } => {
+--- a/niri-ipc/src/lib.rs
++++ b/niri-ipc/src/lib.rs
+@@ -476,6 +476,12 @@
+     FocusWorkspaceUp {},
+     /// Focus a workspace by reference (index or name).
+     FocusWorkspace {
++        /// Reference (index or name) of the workspace to focus.
++        #[cfg_attr(feature = "clap", arg())]
++        reference: WorkspaceReferenceArg,
++    },
++    /// Focus a workspace with a zoom-out, travel, zoom-in camera transition.
++    FocusWorkspaceZoom {
+         /// Reference (index or name) of the workspace to focus.
+         #[cfg_attr(feature = "clap", arg())]
+         reference: WorkspaceReferenceArg,
+--- a/src/layout/tests/animations.rs
++++ b/src/layout/tests/animations.rs
+@@ -1097,3 +1097,207 @@
+     200 × 200 at x:100 y:  0
+     ");
+ }
++
++fn workspace_zoom_layout(options: Options) -> Layout<TestWindow> {
++    let mut layout = check_ops_with_options(
++        options,
++        [
++            Op::AddOutput(1),
++            Op::AddNamedWorkspace {
++                ws_name: 1,
++                output_name: None,
++                layout_config: None,
++            },
++            Op::AddNamedWorkspace {
++                ws_name: 2,
++                output_name: None,
++                layout_config: None,
++            },
++        ],
++    );
++    let mon = layout.active_monitor().unwrap();
++    mon.active_workspace_idx = 0;
++    mon.workspace_switch = None;
++    layout
++}
++
++fn workspace_zoom_sample(layout: &Layout<TestWindow>) -> (f64, f64) {
++    let mon = layout.active_monitor_ref().unwrap();
++    (mon.workspace_render_idx(), mon.overview_zoom())
++}
++
++#[test]
++fn workspace_zoom_staged_trip_keeps_overview_closed() {
++    let mut layout = workspace_zoom_layout(Options::default());
++    layout.switch_workspace_zoom(2, false);
++    assert_eq!(workspace_zoom_sample(&layout), (0., 1.));
++    Op::AdvanceAnimations { msec_delta: 210 }.apply(&mut layout);
++    assert_eq!(workspace_zoom_sample(&layout), (0., 0.65));
++    Op::AdvanceAnimations { msec_delta: 165 }.apply(&mut layout);
++    assert_eq!(workspace_zoom_sample(&layout), (1., 0.65));
++    Op::AdvanceAnimations { msec_delta: 165 }.apply(&mut layout);
++    assert_eq!(workspace_zoom_sample(&layout), (2., 0.65));
++    Op::AdvanceAnimations { msec_delta: 210 }.apply(&mut layout);
++    assert_eq!(workspace_zoom_sample(&layout), (2., 1.));
++    let mon = layout.active_monitor_ref().unwrap();
++    assert!(!mon.overview_open);
++    assert_eq!(mon.overview_progress_value(), None);
++    assert!(mon.workspace_switch.is_none());
++    layout.verify_invariants();
++}
++
++#[test]
++fn workspace_zoom_same_and_repeated_destinations() {
++    let mut layout = workspace_zoom_layout(Options::default());
++    layout.switch_workspace_zoom(0, false);
++    assert!(layout
++        .active_monitor_ref()
++        .unwrap()
++        .workspace_switch
++        .is_none());
++    layout.switch_workspace_zoom(2, false);
++    Op::AdvanceAnimations { msec_delta: 390 }.apply(&mut layout);
++    let sample = workspace_zoom_sample(&layout);
++    layout.switch_workspace_zoom(2, false);
++    assert_eq!(workspace_zoom_sample(&layout), sample);
++    // The original timeline continues instead of restarting the zoom-out phase.
++    Op::AdvanceAnimations { msec_delta: 390 }.apply(&mut layout);
++    assert_eq!(workspace_zoom_sample(&layout), (2., 1.));
++}
++
++#[test]
++fn workspace_zoom_retarget_and_normal_interruption_are_continuous() {
++    let mut layout = workspace_zoom_layout(Options::default());
++    layout.switch_workspace_zoom(2, false);
++    Op::AdvanceAnimations { msec_delta: 100 }.apply(&mut layout);
++    let sample = workspace_zoom_sample(&layout);
++    layout.switch_workspace_zoom(1, false);
++    assert_eq!(workspace_zoom_sample(&layout), sample);
++    Op::AdvanceAnimations { msec_delta: 390 }.apply(&mut layout);
++    let sample = workspace_zoom_sample(&layout);
++    layout.switch_workspace(2);
++    assert_eq!(workspace_zoom_sample(&layout), sample);
++    Op::AdvanceAnimations { msec_delta: 150 }.apply(&mut layout);
++    let (index, zoom) = workspace_zoom_sample(&layout);
++    assert!(index > sample.0 && index < 2.);
++    assert!(zoom > sample.1 && zoom < 1.);
++    Op::AdvanceAnimations { msec_delta: 150 }.apply(&mut layout);
++    assert_eq!(workspace_zoom_sample(&layout), (2., 1.));
++    layout.verify_invariants();
++}
++
++#[test]
++fn workspace_zoom_offset_and_cancellation_restore_normal_scale() {
++    let mut layout = workspace_zoom_layout(Options::default());
++    layout.switch_workspace_zoom(2, false);
++    Op::AdvanceAnimations { msec_delta: 390 }.apply(&mut layout);
++    let mon = layout.active_monitor().unwrap();
++    let sample = (mon.workspace_render_idx(), mon.overview_zoom());
++    mon.add_workspace_top();
++    assert_eq!(
++        (mon.workspace_render_idx(), mon.overview_zoom()),
++        (sample.0 + 1., sample.1)
++    );
++    mon.workspace_switch_gesture_begin(true);
++    assert_eq!(mon.overview_zoom(), 1.);
++    assert!(!mon.overview_open);
++    layout.verify_invariants();
++}
++
++#[test]
++fn workspace_zoom_respects_animation_off_and_actual_overview() {
++    let mut options = Options::default();
++    options.animations.workspace_switch.0.off = true;
++    let mut layout = workspace_zoom_layout(options);
++    layout.switch_workspace_zoom(2, false);
++    assert!(!matches!(
++        layout.active_monitor_ref().unwrap().workspace_switch,
++        Some(super::super::monitor::WorkspaceSwitch::Zoom(_))
++    ));
++    assert_eq!(layout.active_monitor_ref().unwrap().overview_zoom(), 1.);
++
++    let mut layout = workspace_zoom_layout(Options::default());
++    layout.open_overview();
++    layout.switch_workspace_zoom(2, false);
++    assert!(layout.overview_open);
++    assert!(!matches!(
++        layout.active_monitor_ref().unwrap().workspace_switch,
++        Some(super::super::monitor::WorkspaceSwitch::Zoom(_))
++    ));
++}
++
++#[test]
++fn workspace_zoom_global_off_and_overview_interruption() {
++    let mut options = Options::default();
++    options.animations.off = true;
++    let mut layout = workspace_zoom_layout(options);
++    layout.switch_workspace_zoom(2, false);
++    assert!(!matches!(
++        layout.active_monitor_ref().unwrap().workspace_switch,
++        Some(super::super::monitor::WorkspaceSwitch::Zoom(_))
++    ));
++
++    let mut layout = workspace_zoom_layout(Options::default());
++    layout.switch_workspace_zoom(2, false);
++    Op::AdvanceAnimations { msec_delta: 390 }.apply(&mut layout);
++    layout.open_overview();
++    assert!(layout.overview_open);
++    assert!(!matches!(
++        layout.active_monitor_ref().unwrap().workspace_switch,
++        Some(super::super::monitor::WorkspaceSwitch::Zoom(_))
++    ));
++    Op::AdvanceAnimations { msec_delta: 2000 }.apply(&mut layout);
++    layout.close_overview();
++    Op::AdvanceAnimations { msec_delta: 2000 }.apply(&mut layout);
++    assert_eq!(workspace_zoom_sample(&layout), (2., 1.));
++    layout.verify_invariants();
++}
++
++#[test]
++fn workspace_zoom_during_overscrolled_gesture_uses_normal_switch() {
++    let mut layout = workspace_zoom_layout(Options::default());
++    Op::WorkspaceSwitchGestureBegin {
++        output_idx: 1,
++        is_touchpad: true,
++    }
++    .apply(&mut layout);
++    Op::WorkspaceSwitchGestureUpdate {
++        delta: -400.,
++        timestamp: Duration::from_millis(16),
++        is_touchpad: true,
++    }
++    .apply(&mut layout);
++    assert!(workspace_zoom_sample(&layout).0 < 0.);
++    layout.switch_workspace_zoom(2, false);
++    assert!(!matches!(
++        layout.active_monitor_ref().unwrap().workspace_switch,
++        Some(super::super::monitor::WorkspaceSwitch::Zoom(_))
++    ));
++    assert_eq!(workspace_zoom_sample(&layout).1, 1.);
++    Op::AdvanceAnimations { msec_delta: 2000 }.apply(&mut layout);
++    layout.verify_invariants();
++}
++
++#[test]
++fn workspace_zoom_during_interactive_move_uses_normal_switch() {
++    let mut layout = workspace_zoom_layout(Options::default());
++    Op::AddWindow {
++        params: TestWindowParams::new(0),
++    }
++    .apply(&mut layout);
++    Op::InteractiveMoveBegin {
++        window: 0,
++        output_idx: 1,
++        px: 0.,
++        py: 0.,
++    }
++    .apply(&mut layout);
++    assert!(layout.interactive_move.is_some());
++    layout.switch_workspace_zoom(1, false);
++    assert!(!matches!(
++        layout.active_monitor_ref().unwrap().workspace_switch,
++        Some(super::super::monitor::WorkspaceSwitch::Zoom(_))
++    ));
++    assert_eq!(workspace_zoom_sample(&layout).1, 1.);
++    layout.verify_invariants();
++}

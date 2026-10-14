@@ -11,14 +11,28 @@ in
   environment.variables = {
     XCURSOR_THEME = "macOS";
     XCURSOR_SIZE = "24";
+    EDITOR = "nvim";
+    VISUAL = "nvim";
+    GIT_EDITOR = "nvim";
+    SUDO_EDITOR = "nvim";
   };
 
   environment.sessionVariables = {
     BROWSER = "chromium";
     NIXOS_OZONE_WL = "1";
+    VISUAL = "nvim";
+    GIT_EDITOR = "nvim";
+    SUDO_EDITOR = "nvim";
     PATH = [
       "$HOME/.local/bin"
     ];
+  };
+
+  programs.neovim = {
+    enable = true;
+    defaultEditor = true;
+    viAlias = true;
+    vimAlias = true;
   };
 
   users.users.vadyanik = {
@@ -64,100 +78,104 @@ in
       gtree = "git log --graph --decorate --oneline --all";
       mkdir = "mkdir -p";
       v = "nvim";
-      sh = "start-hyprland";
+      sh = "echo 'You stupid asshole, use niri!'";
     };
 
     interactiveShellInit = ''
-      export PATH="$HOME/.local/bin:$PATH"
-      export PATH="$HOME/.npm-global/bin:$PATH"
-      export PATH="$HOME/go/bin:$PATH"
+            export PATH="$HOME/.local/bin:$PATH"
+            export PATH="$HOME/.npm-global/bin:$PATH"
+            export PATH="$HOME/go/bin:$PATH"
+            export EDITOR=nvim VISUAL=nvim GIT_EDITOR=nvim SUDO_EDITOR=nvim
 
-      color_index=0
-      colors=(31 35 34 36 34 35 31 95 94 96 94 95 36 36)
-      while IFS= read -r line; do
-        printf '\033[%sm%s\033[0m\n' "''${colors[$((color_index % ''${#colors[@]} + 1))]}" "$line"
-        ((color_index++))
-      done <<'FASTFETCH_ART'
-                      ;                                                         
-                      ED.                                                       
-                      E#Wi                           L.                 G:      
-                      E###G.                         EW:        ,ft t   E#,    :
-                   .. E#fD#W;     f.     ;WE.     .. E##;       t#E Ej  E#t  .GE
-  t      .DD.     ;W, E#t t##L    E#,   i#G      ;W, E###t      t#E E#, E#t j#K;
-  EK:   ,WK.     j##, E#t  .E#K,  E#t  f#f      j##, E#fE#f     t#E E#t E#GK#f  
-  E#t  i#D      G###, E#t    j##f E#t G#i      G###, E#t D#G    t#E E#t E##D.   
-  E#t j#f     :E####, E#t    :E#K:E#jEW,     :E####, E#t  f#E.  t#E E#t E##Wi   
-  E#tL#i     ;W#DG##, E#t   t##L  E##E.     ;W#DG##, E#t   t#K: t#E E#t E#jL#D: 
-  E#WW,     j###DW##, E#t .D#W;   E#G      j###DW##, E#t    ;#W,t#E E#t E#t ,K#j
-  E#K:     G##i,,G##, E#tiW#G.    E#t     G##i,,G##, E#t     :K#D#E E#t E#t   jD
-  ED.    :K#K:   L##, E#K##i      E#t   :K#K:   L##, E#t      .E##E E#t j#t     
-  t     ;##D.    L##, E##D.       EE.  ;##D.    L##, ..         G#E E#t  ,;     
-        ,,,      .,,  E#t         t    ,,,      .,,              fE ,;.         
-                      L:                                          ,             
-FASTFETCH_ART
+            color_index=0
+            colors=(31 35 34 36 34 35 31 95 94 96 94 95 36 36)
+            while IFS= read -r line; do
+              printf '\033[%sm%s\033[0m\n' "''${colors[$((color_index % ''${#colors[@]} + 1))]}" "$line"
+              ((color_index++))
+            done <<'FASTFETCH_ART'
+                            ;                                                         
+                            ED.                                                       
+                            E#Wi                           L.                 G:      
+                            E###G.                         EW:        ,ft t   E#,    :
+                         .. E#fD#W;     f.     ;WE.     .. E##;       t#E Ej  E#t  .GE
+        t      .DD.     ;W, E#t t##L    E#,   i#G      ;W, E###t      t#E E#, E#t j#K;
+        EK:   ,WK.     j##, E#t  .E#K,  E#t  f#f      j##, E#fE#f     t#E E#t E#GK#f  
+        E#t  i#D      G###, E#t    j##f E#t G#i      G###, E#t D#G    t#E E#t E##D.   
+        E#t j#f     :E####, E#t    :E#K:E#jEW,     :E####, E#t  f#E.  t#E E#t E##Wi   
+        E#tL#i     ;W#DG##, E#t   t##L  E##E.     ;W#DG##, E#t   t#K: t#E E#t E#jL#D: 
+        E#WW,     j###DW##, E#t .D#W;   E#G      j###DW##, E#t    ;#W,t#E E#t E#t ,K#j
+        E#K:     G##i,,G##, E#tiW#G.    E#t     G##i,,G##, E#t     :K#D#E E#t E#t   jD
+        ED.    :K#K:   L##, E#K##i      E#t   :K#K:   L##, E#t      .E##E E#t j#t     
+        t     ;##D.    L##, E##D.       EE.  ;##D.    L##, ..         G#E E#t  ,;     
+              ,,,      .,,  E#t         t    ,,,      .,,              fE ,;.         
+                            L:                                          ,             
+      FASTFETCH_ART
 
-      mkcd() {
-        mkdir -p -- "$1" && cd -- "$1"
-      }
+            mkcd() {
+              mkdir -p -- "$1" && cd -- "$1"
+            }
 
-      # Comfortable editing.
-      bindkey -e
-      bindkey '^[[1;5D' backward-word
-      bindkey '^[[1;5C' forward-word
-      bindkey '^[[5D' backward-word
-      bindkey '^[[5C' forward-word
-      bindkey '^[b' backward-word
-      bindkey '^[f' forward-word
-      bindkey '^[[H' beginning-of-line
-      bindkey '^[[F' end-of-line
-      bindkey '^[[3~' delete-char
-      bindkey '^H' backward-kill-word
-      bindkey '^[[A' up-line-or-search
-      bindkey '^[[B' down-line-or-search
+            # Vim-style command-line navigation (Esc enters normal mode; i/a return to insert).
+            bindkey -v
+            KEYTIMEOUT=10
+            bindkey -M viins '^A' beginning-of-line
+            bindkey -M viins '^E' end-of-line
+            bindkey -M viins '^[[1;5D' backward-word
+            bindkey -M viins '^[[1;5C' forward-word
+            bindkey -M viins '^[[5D' backward-word
+            bindkey -M viins '^[[5C' forward-word
+            bindkey -M viins '^[b' backward-word
+            bindkey -M viins '^[f' forward-word
+            bindkey -M viins '^[[H' beginning-of-line
+            bindkey -M viins '^[[F' end-of-line
+            bindkey -M viins '^[[3~' delete-char
+            bindkey -M viins '^H' backward-kill-word
+            bindkey -M viins '^[[A' up-line-or-search
+            bindkey -M viins '^[[B' down-line-or-search
 
-      # History that behaves well across multiple terminals.
-      setopt APPEND_HISTORY
-      setopt EXTENDED_HISTORY
-      setopt HIST_EXPIRE_DUPS_FIRST
-      setopt HIST_FIND_NO_DUPS
-      setopt HIST_IGNORE_ALL_DUPS
-      setopt HIST_IGNORE_SPACE
-      setopt HIST_REDUCE_BLANKS
-      setopt INC_APPEND_HISTORY
-      setopt SHARE_HISTORY
+            # History that behaves well across multiple terminals.
+            setopt APPEND_HISTORY
+            setopt EXTENDED_HISTORY
+            setopt HIST_EXPIRE_DUPS_FIRST
+            setopt HIST_FIND_NO_DUPS
+            setopt HIST_IGNORE_ALL_DUPS
+            setopt HIST_IGNORE_SPACE
+            setopt HIST_REDUCE_BLANKS
+            setopt INC_APPEND_HISTORY
+            setopt SHARE_HISTORY
 
-      # Better completion UX.
-      zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
-      zstyle ':completion:*' menu select
-      zstyle ':completion:*' group-name ""
-      zstyle ':completion:*:descriptions' format '%F{yellow}-- %d --%f'
-      zstyle ':completion:*:warnings' format '%F{red}No matches for: %d%f'
-      zstyle ':completion:*' list-colors ''${(s.:.)LS_COLORS}
+            # Better completion UX.
+            zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
+            zstyle ':completion:*' menu select
+            zstyle ':completion:*' group-name ""
+            zstyle ':completion:*:descriptions' format '%F{yellow}-- %d --%f'
+            zstyle ':completion:*:warnings' format '%F{red}No matches for: %d%f'
+            zstyle ':completion:*' list-colors ''${(s.:.)LS_COLORS}
 
-      # fzf restores a read-only zle option on zsh 5.9, so silence that harmless warning.
-      if [[ -r ${pkgs.fzf}/share/fzf/completion.zsh ]]; then
-        source ${pkgs.fzf}/share/fzf/completion.zsh 2>/dev/null
-      fi
-      if [[ -r ${pkgs.fzf}/share/fzf/key-bindings.zsh ]]; then
-        source ${pkgs.fzf}/share/fzf/key-bindings.zsh 2>/dev/null
-      fi
+            # fzf restores a read-only zle option on zsh 5.9, so silence that harmless warning.
+            if [[ -r ${pkgs.fzf}/share/fzf/completion.zsh ]]; then
+              source ${pkgs.fzf}/share/fzf/completion.zsh 2>/dev/null
+            fi
+            if [[ -r ${pkgs.fzf}/share/fzf/key-bindings.zsh ]]; then
+              source ${pkgs.fzf}/share/fzf/key-bindings.zsh 2>/dev/null
+            fi
 
-      # Quick fuzzy package runner migrated from /home/vadyanik/.zshrc.
-      unalias nspf 2>/dev/null
-      nspf() {
-        local query="''${1:-.}"
-        local selection
-        selection=$(
-          nix search nixpkgs "$query" --json 2>/dev/null \
-            | jq -r 'to_entries[] | "\(.key | split(".") | last) \t \(.value.description)"' \
-            | fzf --delimiter '\t' --with-nth 1 --preview 'echo {2}' --preview-window up:3:wrap \
-            | awk '{print $1}'
-        )
+            # Quick fuzzy package runner migrated from /home/vadyanik/.zshrc.
+            unalias nspf 2>/dev/null
+            nspf() {
+              local query="''${1:-.}"
+              local selection
+              selection=$(
+                nix search nixpkgs "$query" --json 2>/dev/null \
+                  | jq -r 'to_entries[] | "\(.key | split(".") | last) \t \(.value.description)"' \
+                  | fzf --delimiter '\t' --with-nth 1 --preview 'echo {2}' --preview-window up:3:wrap \
+                  | awk '{print $1}'
+              )
 
-        if [[ -n "$selection" ]]; then
-          nix run "nixpkgs#$selection"
-        fi
-      }
+              if [[ -n "$selection" ]]; then
+                nix run "nixpkgs#$selection"
+              fi
+            }
     '';
   };
 
@@ -226,10 +244,14 @@ FASTFETCH_ART
     "application/x-cbr" = "okularApplication_comicbook.desktop";
     "application/x-cbz" = "okularApplication_comicbook.desktop";
 
-    "text/plain" = "org.kde.kate.desktop";
-    "text/markdown" = "org.kde.kate.desktop";
-    "application/json" = "org.kde.kate.desktop";
-    "application/xml" = "org.kde.kate.desktop";
+    "text/plain" = "nvim.desktop";
+    "text/markdown" = "nvim.desktop";
+    "application/json" = "nvim.desktop";
+    "application/xml" = "nvim.desktop";
+    "text/x-go" = "nvim.desktop";
+    "text/x-python" = "nvim.desktop";
+    "text/x-csharp" = "nvim.desktop";
+    "application/x-shellscript" = "nvim.desktop";
 
     "application/msword" = "writer.desktop";
     "application/rtf" = "writer.desktop";

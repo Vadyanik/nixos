@@ -28,7 +28,6 @@ in
 {
   environment.systemPackages = with pkgs; [
     # vnix:start
-    neovim
     ghostty
     fastfetch
     zellij
@@ -59,6 +58,7 @@ in
     xmcl-desktop
     quickemu
     dotnet-sdk_8
+    jdk21_headless
     fzf
     bubblewrap
     cava
@@ -122,6 +122,7 @@ in
     (import ../../packages/space-wallpaper/package.nix { inherit pkgs; })
     zenity
     go
+    csharpier
 
     (prismlauncher.override {
       prismlauncher-unwrapped = pkgs.prismlauncher-unwrapped.overrideAttrs (old: {

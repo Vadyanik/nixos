@@ -1,5 +1,15 @@
 { config, lib, pkgs, ... }:
 let
+  niriZoom = pkgs.niri.overrideAttrs (old: assert lib.assertMsg (old.version == "26.04")
+    "workspace-zoom.patch targets Niri 26.04; rebase it before upgrading Niri"; {
+  patches = (old.patches or []) ++ [ ../packages/niri/workspace-zoom.patch ];
+  # Skip the package's separate cargo test build; the user wants to validate desktop behavior directly.
+  doCheck = false;
+  env = (old.env or {}) // { NIRI_BUILD_COMMIT = "Nixpkgs-workspace-zoom"; };
+});
+  workspaceZoom = pkgs.writeScriptBin "desktop-workspace-zoom" (
+    "#!${pkgs.python3}/bin/python3\n" + builtins.readFile ../packages/niri/workspace-zoom.py
+  );
   desktopTools = import ../packages/desktop-session/package.nix { inherit pkgs; };
   bar = import ../packages/quickshell-bar/package.nix { inherit pkgs desktopTools; };
   rofi = import ../packages/rofi/package.nix { inherit pkgs; };
@@ -25,13 +35,16 @@ let
 in {
   programs.niri = {
     enable = true;
+    package = niriZoom;
     useNautilus = false;
   };
   environment.systemPackages = [
-    desktopTools bar rofi sessionStart pkgs.xwayland-satellite pkgs.swappy
+    desktopTools bar rofi sessionStart workspaceZoom pkgs.xwayland-satellite pkgs.swappy
   ];
   environment.etc."xdg/niri/config.kdl".source = ../packages/niri/config.kdl;
   environment.etc."xdg/niri/hotkeys.kdl".source = ../packages/niri/hotkeys.kdl;
+  environment.etc."xdg/ghostty/config".source = ../packages/ghostty/config;
+  environment.etc."xdg/ghostty/cursor-warp.glsl".source = ../packages/ghostty/cursor-warp.glsl;
   programs.zsh.shellAliases.sn = "niri-session";
 
   systemd.user.services.quickshell-bar = {
@@ -87,6 +100,7 @@ in {
       adopt_desktop_link "$source" "$desktopHome/.config/quickshell/bar/$(basename "$source")"
     done
     adopt_desktop_link ${desktopTools}/share/desktop-session/hyprlock.conf "$desktopHome/.config/hypr/hyprlock.conf"
+    adopt_desktop_link /etc/xdg/ghostty/config "$desktopHome/.config/ghostty/config"
     adopt_desktop_link /etc/xdg/niri/config.kdl "$desktopHome/.config/niri/config.kdl"
     adopt_desktop_link ${rofi}/bin/rofi-launcher "$desktopHome/.config/rofi/scripts/launcher.py"
     adopt_desktop_link ${rofi}/bin/themed-rofi "$desktopHome/.config/rofi/scripts/themed-rofi.py"

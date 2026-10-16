@@ -10,6 +10,7 @@ import subprocess
 import tempfile
 import time
 import tomllib
+from urllib.parse import urlsplit, urlunsplit
 
 
 def run(argv, **kwargs):
@@ -32,6 +33,34 @@ def normalize(value):
 
 def notify(text):
     subprocess.run(['notify-send', 'Desktop', text], check=False)
+
+
+def teams_target(value):
+    try:
+        parsed = urlsplit(value)
+    except ValueError:
+        return None
+    scheme = parsed.scheme.casefold()
+    if scheme in ('msteams', 'web+msteams'):
+        if parsed.netloc and parsed.netloc.casefold() != 'teams.microsoft.com':
+            return None
+        return urlunsplit(('https', 'teams.microsoft.com', parsed.path or '/', parsed.query, parsed.fragment))
+    if scheme == 'https' and parsed.netloc.casefold() == 'teams.microsoft.com':
+        return urlunsplit(('https', 'teams.microsoft.com', parsed.path or '/', parsed.query, parsed.fragment))
+    return None
+
+
+def teams(args):
+    targets = [teams_target(value) for value in args]
+    targets = [target for target in targets if target]
+    # Only Teams uses Chromium; other desktop browser actions use LibreWolf.
+    command = ['chromium', '--user-data-dir=' + str(Path.home() / '.config/chromium'),
+               '--profile-directory=Default',
+               '--app-id=ompifgpmddkgmclendfeacglnodjjndh']
+    if not args:
+        subprocess.Popen(command, start_new_session=True)
+    for target in targets:
+        subprocess.Popen(command + [target], start_new_session=True)
 
 
 def focus(args):
@@ -166,6 +195,8 @@ def main():
         poltertype()
     elif command == 'screenshot':
         screenshot(args[0] if args else 'edit')
+    elif command == 'teams':
+        teams(args)
     else:
         raise ValueError(command)
 

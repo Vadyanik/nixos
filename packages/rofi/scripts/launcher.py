@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""One-field Rofi application launcher with Chromium search fallback."""
+"""One-field Rofi application launcher with LibreWolf search fallback."""
 import configparser
 import fcntl
 import os
@@ -109,7 +109,7 @@ def launch():
         index, query = selection.stdout.rstrip('\n').split('\x1f', 1)
         if forced_search(query) or int(index) < 0:
             if query.strip():
-                subprocess.Popen(['chromium', '--new-tab', search_url(query)],
+                subprocess.Popen(['librewolf', '--new-tab', search_url(query)],
                                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
         else:
             app = apps[int(index)]
@@ -127,7 +127,7 @@ if __name__ == '__main__':
         assert not forced_search('ghostty') and not forced_search('погода')
         assert search_url('2^8') == 'https://www.google.com/search?q=2%5E8'
         assert search_url('cats & dogs') == 'https://www.google.com/search?q=cats+%26+dogs'
-        assert any('chromium' in row.lower() for _, _, row, _ in applications())
+        assert any('librewolf' in row.lower() for _, _, row, _ in applications())
         import tempfile
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'history.sqlite3'

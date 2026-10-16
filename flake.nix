@@ -12,6 +12,11 @@
     awww.url = "git+https://codeberg.org/LGFae/awww";
 
     codex-desktop-linux.url = "github:ilysenko/codex-desktop-linux";
+
+    claude-desktop = {
+      url = "github:aaddrick/claude-desktop-debian";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -20,6 +25,7 @@
       nixpkgs,
       spicetify-nix,
       codex-desktop-linux,
+      claude-desktop,
       ...
     }@inputs:
     {
@@ -30,6 +36,7 @@
           spicetify-nix.nixosModules.default
           codex-desktop-linux.nixosModules.default
           {
+            nixpkgs.overlays = [ claude-desktop.overlays.default ];
             programs.codexDesktopLinux = {
               enable = true;
               computerUseUi.enable = true;

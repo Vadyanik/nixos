@@ -8,6 +8,7 @@
     ../../modules/space-wallpaper.nix
     ../../modules/desktop-widgets.nix
     ../../modules/niri-desktop.nix
+    ../../modules/librewolf-theme.nix
     ../../modules/poltertype.nix
     ../../modules/user.nix
   ];

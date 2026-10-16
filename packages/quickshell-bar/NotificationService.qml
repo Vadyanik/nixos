@@ -120,6 +120,16 @@ Item {
             hidePopupByToken(row.token); return;
         }
     }
+    function limitPopups() {
+        let visibleCount = 0;
+        for (let i = 0; i < popups.count; i++) if (!popups.get(i).closing) visibleCount++;
+        for (let i = popups.count - 1; i >= 0 && visibleCount > 3; i--) {
+            let row = popups.get(i);
+            if (row.closing) continue;
+            service.expirePopup(row.id, row.token);
+            visibleCount--;
+        }
+    }
     function clear() {
         for (let notification of server.trackedNotifications.values.slice()) notification.dismiss();
         for (let i = 0; i < popups.count; i++) popups.setProperty(i, "closing", true);
@@ -159,7 +169,7 @@ Item {
             if (!notification.lastGeneration && !service.doNotDisturb) {
                 service.hidePopup(row.id);
                 popups.insert(0, Object.assign({}, row, {timeout: notification.expireTimeout === 0 ? 0 : (notification.expireTimeout > 0 ? notification.expireTimeout : 6000), token: service.nextPopupToken++, closing: false}));
-                while (popups.count > 3) { let old = popups.get(popups.count - 1); service.expirePopup(old.id, old.token); }
+                service.limitPopups();
             }
             // ponytail: keep the newest 200 entries; older history can be archived if needed.
             while (history.count > 200) { let old = history.get(history.count - 1); if (live[old.liveId]) live[old.liveId].expire(); history.remove(history.count - 1); }

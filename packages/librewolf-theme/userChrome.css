@@ -1,0 +1,237 @@
+/* LibreWolf + Quickshell. Generated palette is the only source of colors.
+ * Requires toolkit.legacyUserProfileCustomizations.stylesheets = true.
+ * Preserve navigation, identity/security, downloads, extensions and app menu.
+ */
+@import url("quickshell-colors.css");
+
+:root {
+  font-family: "JetBrainsMonoNL Nerd Font", monospace !important;
+  color-scheme: dark !important;
+  --window-border-radius: 0px !important;
+  --border-radius-circle: 0px !important;
+  --border-radius-xsmall: 0px !important;
+  --border-radius-small: 0px !important;
+  --border-radius-medium: 0px !important;
+  --border-radius-large: 0px !important;
+  --button-border-radius: 0px !important;
+  --panel-border-radius: 0px !important;
+  --arrowpanel-border-radius: 0px !important;
+  --arrowpanel-menuitem-border-radius: 0px !important;
+  --tab-border-radius: 0px !important;
+  --toolbarbutton-border-radius: 0px !important;
+  --tab-min-height: 30px !important;
+  --tab-block-margin: 0px !important;
+  --tab-margin-block: 0px !important;
+  --tab-background-color: transparent !important;
+  --tab-background-color-hover: transparent !important;
+  --tab-background-color-selected: transparent !important;
+  --toolbox-background-color: var(--qs-bg) !important;
+  --toolbox-background-color-inactive: var(--qs-bg) !important;
+  --toolbox-text-color: var(--qs-fg) !important;
+  --toolbox-text-color-inactive: var(--qs-fg) !important;
+  --toolbar-background-color: var(--qs-bg) !important;
+  --sidebar-launcher-surface-color: var(--qs-bg) !important;
+  --sidebar-border-color: var(--qs-elevated) !important;
+  --sidebar-launcher-button-padding-inline: 3px !important;
+  --toolbarbutton-inner-padding: 5px !important;
+  --toolbarbutton-outer-padding: 2px !important;
+  --urlbar-min-height: 28px !important;
+  --urlbar-container-height: 32px !important;
+  --urlbarView-row-body-padding: 4px !important;
+  --arrowpanel-menuitem-padding-block: 5px !important;
+  --arrowpanel-padding: 8px !important;
+
+  --lwt-accent-color: var(--qs-bg) !important;
+  --lwt-text-color: var(--qs-fg) !important;
+  --toolbar-bgcolor: var(--qs-bg) !important;
+  --toolbar-color: var(--qs-fg) !important;
+  --toolbar-text-color: var(--qs-fg) !important;
+  --toolbar-field-text-color: var(--qs-fg) !important;
+  --toolbar-field-text-color-focus: var(--qs-fg) !important;
+  --toolbar-field-background-color-focus: var(--qs-elevated) !important;
+  --toolbar-field-border-color-focus: var(--qs-accent) !important;
+  --toolbarbutton-icon-fill: var(--qs-fg) !important;
+  --toolbarbutton-icon-fill-attention: var(--qs-accent) !important;
+  --toolbarbutton-padding-inner: 5px !important;
+  --toolbarbutton-padding-inner-compact: 5px !important;
+  --toolbarbutton-padding-outer: 2px !important;
+  --toolbar-field-background-color: var(--qs-surface) !important;
+  --toolbar-field-color: var(--qs-fg) !important;
+  --toolbar-field-border-color: transparent !important;
+  --toolbar-field-focus-background-color: var(--qs-elevated) !important;
+  --toolbar-field-focus-color: var(--qs-fg) !important;
+  --toolbar-field-focus-border-color: var(--qs-accent) !important;
+  --toolbar-field-highlight: var(--qs-accent) !important;
+  --toolbar-field-highlight-color: var(--qs-on-accent) !important;
+  --toolbarbutton-hover-background: var(--qs-elevated) !important;
+  --toolbarbutton-active-background: var(--qs-elevated) !important;
+  --toolbarbutton-background-color-hover: var(--qs-elevated) !important;
+  --toolbarbutton-background-color-active: var(--qs-elevated) !important;
+  --tab-selected-bgcolor: transparent !important;
+  --tab-selected-textcolor: var(--qs-accent) !important;
+  --tab-loading-fill: var(--qs-accent) !important;
+  --tab-line-color: var(--qs-accent) !important;
+  --tabs-navbar-separator-style: none !important;
+  --chrome-content-separator-color: transparent !important;
+  --arrowpanel-background: var(--qs-surface) !important;
+  --arrowpanel-color: var(--qs-fg) !important;
+  --arrowpanel-border-color: var(--qs-elevated) !important;
+  --panel-background: var(--qs-surface) !important;
+  --panel-color: var(--qs-fg) !important;
+  --panel-border-color: var(--qs-elevated) !important;
+  --urlbarView-highlight-background: var(--qs-elevated) !important;
+  --urlbarView-highlight-color: var(--qs-fg) !important;
+  --urlbarView-url-color: var(--qs-accent) !important;
+  --sidebar-background-color: var(--qs-bg) !important;
+  --sidebar-text-color: var(--qs-fg) !important;
+  --background-color-canvas: var(--qs-bg) !important;
+  --background-color-box: var(--qs-surface) !important;
+  --text-color: var(--qs-fg) !important;
+  --text-color-deemphasized: var(--qs-muted) !important;
+  --color-accent-primary: var(--qs-accent) !important;
+  --color-accent-primary-hover: color-mix(in srgb, var(--qs-accent) 85%, var(--qs-fg)) !important;
+  --color-accent-primary-active: color-mix(in srgb, var(--qs-accent) 85%, var(--qs-bg)) !important;
+  --text-color-on-accent: var(--qs-on-accent) !important;
+  --focus-outline-color: var(--qs-accent) !important;
+  --border-color: var(--qs-elevated) !important;
+  --border-color-interactive: var(--qs-muted) !important;
+  --button-background-color: var(--qs-elevated) !important;
+  --button-background-color-hover: color-mix(in srgb, var(--qs-elevated) 85%, var(--qs-fg)) !important;
+  --button-background-color-active: var(--qs-surface) !important;
+  --input-text-background-color: var(--qs-surface) !important;
+  --input-text-color: var(--qs-fg) !important;
+  --input-background-color: var(--qs-surface) !important;
+  --input-color: var(--qs-fg) !important;
+  --link-color: var(--qs-accent) !important;
+}
+
+/* Includes pseudo-elements; token overrides also reach cooperating shadow DOM. */
+*, *::before, *::after { border-radius: 0 !important; }
+
+#navigator-toolbox, #TabsToolbar, #nav-bar, #PersonalToolbar,
+#toolbar-menubar, #sidebar-box, #sidebar-main, #browser {
+  background-color: var(--qs-bg) !important;
+  color: var(--qs-fg) !important;
+}
+#navigator-toolbox, #nav-bar, #TabsToolbar {
+  background-image: none !important;
+  box-shadow: none !important;
+  border: 0 !important;
+}
+#navigator-toolbox { border-bottom: 0 !important; }
+#nav-bar {
+  padding: 0 3px !important;
+  background-color: color-mix(in srgb, var(--qs-accent) 10%, var(--qs-bg)) !important;
+}
+#urlbar-container, #search-container { padding-block: 2px !important; }
+#urlbar-background, #searchbar {
+  background: var(--qs-surface) !important;
+  border: 1px solid color-mix(in srgb, var(--qs-accent) 40%, var(--qs-bg)) !important;
+  box-shadow: none !important;
+}
+#urlbar[focused] > #urlbar-background {
+  background: var(--qs-elevated) !important;
+  border: 1px solid var(--qs-accent) !important;
+}
+.urlbarView { border-top-color: var(--qs-elevated) !important; }
+.urlbarView-row { border-radius: 0 !important; }
+.urlbarView-row[selected] { background: var(--qs-elevated) !important; }
+/* Horizontal tabs have no individual boxes, including hover/selection.
+ * Separators belong to each tab's background layer: they follow tab dragging
+ * and clipping in the scrollbox without covering audio/close controls.
+ */
+.tab-background {
+  position: relative !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border: 0 !important;
+  outline: none !important;
+}
+#tabbrowser-tabs[orient="horizontal"] .tab-background::before,
+#tabbrowser-tabs[orient="horizontal"] .tab-background::after {
+  content: "";
+  position: absolute;
+  inset-block: 6px;
+  pointer-events: none;
+  background: var(--qs-muted);
+  opacity: 0.55;
+  inline-size: 1px;
+}
+#tabbrowser-tabs[orient="horizontal"] .tab-background::before {
+  inset-inline-start: 0;
+}
+#tabbrowser-tabs[orient="horizontal"] .tab-background::after {
+  inset-inline-end: 0;
+  content: none;
+}
+#tabbrowser-tabs[orient="horizontal"] .tabbrowser-tab:first-child .tab-background::before {
+  content: none !important;
+}
+.tab-content { padding-inline: 8px !important; }
+#tabbrowser-tabs[orient="horizontal"] .tabbrowser-tab .tab-content {
+  position: relative !important;
+}
+#tabbrowser-tabs[orient="horizontal"] .tabbrowser-tab[selected] .tab-content::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  block-size: 3px;
+  background: var(--qs-accent);
+  pointer-events: none;
+}
+.tabbrowser-tab { padding-inline: 0 !important; }
+.tabbrowser-tab .tab-label {
+  color: color-mix(in srgb, var(--qs-fg) 85%, var(--qs-muted)) !important;
+  font-weight: 400 !important;
+}
+.tabbrowser-tab[selected] .tab-label {
+  color: var(--qs-accent) !important;
+  font-weight: 700 !important;
+}
+/* Redundant mouse shortcuts/decorations; keyboard and main menu retain access. */
+#home-button, #firefox-view-button, .titlebar-spacer { display: none !important; }
+/* Window and tab closing use keyboard shortcuts. */
+#titlebar-close, .titlebar-close { display: none !important; }
+/* Keep the toolbars focused on navigation, the address bar, extensions and menu. */
+#tabs-newtab-button, #new-tab-button,
+#sidebar-box, #sidebar-main, #sidebar, #sidebar-splitter, #sidebar-button,
+#stop-reload-button, #reload-button, #stop-button, #downloads-button {
+  display: none !important;
+}
+/* Keep the tab strip and bookmark toolbar. */
+menupopup, panel {
+  --panel-background: var(--qs-surface) !important;
+  --panel-color: var(--qs-fg) !important;
+  --panel-border-color: var(--qs-elevated) !important;
+  --menu-background-color: var(--qs-surface) !important;
+  --menu-color: var(--qs-fg) !important;
+  --menuitem-hover-background-color: var(--qs-elevated) !important;
+  --menuitem-hover-color: var(--qs-fg) !important;
+  color-scheme: dark !important;
+}
+menupopup::part(content), panel::part(content) { box-shadow: none !important; }
+menu, menuitem { padding-block: 4px !important; }
+menu[_moz-menuactive="true"], menuitem[_moz-menuactive="true"],
+.subviewbutton:hover { background-color: var(--qs-elevated) !important; }
+menuseparator { border-color: var(--qs-elevated) !important; }
+tooltip, #statuspanel-label {
+  background: var(--qs-surface) !important;
+  color: var(--qs-fg) !important;
+  border-color: var(--qs-elevated) !important;
+}
+/* Retain keyboard focus and security/warning colors supplied by the browser. */
+:focus-visible { outline-color: var(--qs-accent) !important; }
+
+/* Retain square sidebar tools even with horizontal tabs enabled. */
+#sidebar-main, #sidebar-box, #sidebar {
+  color-scheme: dark !important;
+  --background-color-canvas: var(--qs-bg) !important;
+  --background-color-box: var(--qs-surface) !important;
+  --button-border-radius: 0px !important;
+}
+#sidebar, #sidebar-main { box-shadow: none !important; }
+#sidebar-header { padding: 5px 8px !important; }
+
+/* Tabs are closed with keyboard shortcuts; preserve audio controls. */
+.tab-close-button { display: none !important; }

@@ -10,6 +10,6 @@ pkgs.runCommand "desktop-rofi" { nativeBuildInputs = [ pkgs.makeWrapper pkgs.pyt
     makeWrapper ${pkgs.python3}/bin/python3 $out/bin/$name \
       --add-flags "$out/share/rofi/scripts/$entry.py" \
       --set ROFI_CONFIG_DIR "$out/share/rofi" \
-      --prefix PATH : '${pkgs.lib.makeBinPath [ pkgs.rofi pkgs.niri pkgs.hyprland pkgs.chromium pkgs.glib ]}'
+      --prefix PATH : '${pkgs.lib.makeBinPath [ pkgs.rofi pkgs.niri pkgs.hyprland pkgs.librewolf pkgs.glib ]}'
   done
 ''

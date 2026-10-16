@@ -18,7 +18,7 @@ in
   };
 
   environment.sessionVariables = {
-    BROWSER = "chromium";
+    BROWSER = "librewolf";
     NIXOS_OZONE_WL = "1";
     VISUAL = "nvim";
     GIT_EDITOR = "nvim";
@@ -78,7 +78,7 @@ in
       gtree = "git log --graph --decorate --oneline --all";
       mkdir = "mkdir -p";
       v = "nvim";
-      sh = "echo 'You stupid asshole, use niri!'";
+      sh = "niri-session";
     };
 
     interactiveShellInit = ''
@@ -216,19 +216,19 @@ in
   };
 
   xdg.mime.defaultApplications = {
-    "x-scheme-handler/mailto" = "chromium.desktop";
-    "x-scheme-handler/chrome" = "chromium.desktop";
-    "application/x-extension-xhtml" = "chromium.desktop";
-    "application/x-extension-xht" = "chromium.desktop";
-    "application/x-extension-shtml" = "chromium.desktop";
-    "application/x-extension-html" = "chromium.desktop";
-    "application/x-extension-htm" = "chromium.desktop";
-    "application/xhtml+xml" = "chromium.desktop";
-    "text/html" = "chromium.desktop";
-    "x-scheme-handler/http" = "chromium.desktop";
-    "x-scheme-handler/https" = "chromium.desktop";
-    "x-scheme-handler/about" = "chromium.desktop";
-    "x-scheme-handler/unknown" = "chromium.desktop";
+    "x-scheme-handler/mailto" = "librewolf.desktop";
+    "x-scheme-handler/chrome" = "librewolf.desktop";
+    "application/x-extension-xhtml" = "librewolf.desktop";
+    "application/x-extension-xht" = "librewolf.desktop";
+    "application/x-extension-shtml" = "librewolf.desktop";
+    "application/x-extension-html" = "librewolf.desktop";
+    "application/x-extension-htm" = "librewolf.desktop";
+    "application/xhtml+xml" = "librewolf.desktop";
+    "text/html" = "librewolf.desktop";
+    "x-scheme-handler/http" = "librewolf.desktop";
+    "x-scheme-handler/https" = "librewolf.desktop";
+    "x-scheme-handler/about" = "librewolf.desktop";
+    "x-scheme-handler/unknown" = "librewolf.desktop";
     "inode/directory" = "org.kde.dolphin.desktop";
     "image/avif" = "com.interversehq.qView.desktop";
     "image/bmp" = "com.interversehq.qView.desktop";

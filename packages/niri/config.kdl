@@ -29,7 +29,7 @@ cursor {
     xcursor-size 24
 }
 environment {
-    BROWSER "chromium"
+    BROWSER "librewolf"
     XCURSOR_THEME "macOS"
     XCURSOR_SIZE "24"
 }

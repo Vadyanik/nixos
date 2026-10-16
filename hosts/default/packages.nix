@@ -219,6 +219,7 @@ in
     psst
         zip
     zed-editor
+    claude-desktop
     # vnix:end
   ];
 }

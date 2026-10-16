@@ -36,7 +36,7 @@ actions = {
     'next-window': 'Next recent window', 'previous-window': 'Previous recent window',
 }
 spawn = {
-    'ghostty': 'Ghostty', 'chromium': 'Chromium', 'dolphin': 'Dolphin',
+    'ghostty': 'Ghostty', 'chromium': 'Chromium', 'librewolf': 'LibreWolf', 'dolphin': 'Dolphin',
     'desktop-force-close': 'Force close window', 'rofi-launcher': 'Rofi: apps / search / calculator',
     'stt-toggle': 'Dictation: complete text', 'desktop-poltertype': 'Toggle PolterType exclusion for current app',
     'desktop-mru': 'Previous keyboard layout; double press for third language',

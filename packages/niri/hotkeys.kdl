@@ -66,7 +66,7 @@ binds {
     Mod+Shift+9 { move-window-to-workspace "9"; }
     Mod+Shift+0 { move-window-to-workspace "10"; }
     Mod+Space repeat=false hotkey-overlay-title="Previous keyboard language; double press third language" { spawn "desktop-mru"; }
-    Mod+Z repeat=false { spawn "desktop-focus" "--app" "claude-code" "--launch" "claude-code-terminal"; }
+    Mod+Z repeat=false { spawn "desktop-focus" "--title" "Claude Code" "--launch" "claude-code-terminal"; }
     Mod+F repeat=false { maximize-column; }
     Mod+Shift+F repeat=false { fullscreen-window; }
     Mod+O repeat=false { spawn "desktop-scratchpad" "toggle"; }

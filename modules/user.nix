@@ -87,12 +87,8 @@ in
             export PATH="$HOME/go/bin:$PATH"
             export EDITOR=nvim VISUAL=nvim GIT_EDITOR=nvim SUDO_EDITOR=nvim
 
-            color_index=0
             colors=(31 35 34 36 34 35 31 95 94 96 94 95 36 36)
-            while IFS= read -r line; do
-              printf '\033[%sm%s\033[0m\n' "''${colors[$((color_index % ''${#colors[@]} + 1))]}" "$line"
-              ((color_index++))
-            done <<'FASTFETCH_ART'
+            fastfetch_art=$(cat <<'FASTFETCH_ART'
                             ;                                                         
                             ED.                                                       
                             E#Wi                           L.                 G:      
@@ -110,6 +106,20 @@ in
               ,,,      .,,  E#t         t    ,,,      .,,              fE ,;.         
                             L:                                          ,             
       FASTFETCH_ART
+            )
+
+            # Draw the banner only when the terminal is wide enough to fit it.
+            art_width=0
+            while IFS= read -r line; do
+              (( ''${#line} > art_width )) && art_width=''${#line}
+            done <<< "$fastfetch_art"
+            if (( ''${COLUMNS:-$(tput cols 2>/dev/null || echo 0)} >= art_width )); then
+              color_index=0
+              while IFS= read -r line; do
+                printf '\033[%sm%s\033[0m\n' "''${colors[$((color_index % ''${#colors[@]} + 1))]}" "$line"
+                ((color_index++))
+              done <<< "$fastfetch_art"
+            fi
 
             mkcd() {
               mkdir -p -- "$1" && cd -- "$1"

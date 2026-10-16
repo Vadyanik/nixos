@@ -88,7 +88,7 @@ ShellRoot {
         actionComponent.createObject(root, {command: ["python3", scripts + "discord_rpc.py", "action", name], callback: () => discord.refresh(), running: true});
     }
     function refresh(name) {
-        if (name === "all" || name === "codex") { five.refresh(); weekly.refresh(); }
+        if (name === "all" || name === "claude") { five.refresh(); weekly.refresh(); }
         if (name === "all" || name === "disk") disk.refresh();
         if (name === "all" || name === "vpn") vpn.refresh();
         if (name === "all" || name === "alert") alert.refresh();
@@ -124,9 +124,9 @@ ShellRoot {
     BookmarkService { id: bookmarks; scripts: root.scripts }
     Poll { id: metrics; command: ["python3", root.scripts + "system_metrics.py"]; interval: root.controlOpen ? 2000 : 0 }
     Poll { id: vpn; command: ["/run/current-system/sw/bin/mullvad", "status", "-v"]; interval: root.controlOpen ? 5000 : 0; json: false }
-    Poll { id: five; command: ["bash", root.scripts + "codex_usage.sh", "status", "five"]; interval: 60000 }
-    Poll { id: weekly; command: ["bash", root.scripts + "codex_usage.sh", "status", "weekly"]; interval: 60000 }
-    CodexStageNotifications { id: codexNotices; five: five.value; weekly: weekly.value; limits: control.codexLimits }
+    Poll { id: five; command: ["bash", root.scripts + "claude_usage.sh", "status", "five"]; interval: 60000 }
+    Poll { id: weekly; command: ["bash", root.scripts + "claude_usage.sh", "status", "weekly"]; interval: 60000 }
+    ClaudeStageNotifications { id: claudeNotices; five: five.value; weekly: weekly.value; limits: control.claudeLimits }
     Poll { id: disk; command: ["bash", root.scripts + "disk_space.sh", "both"]; interval: 10000 }
     Poll { id: boot; command: ["bash", root.scripts + "boot_streak.sh"]; interval: 3600000; json: false }
     Poll { id: stt; command: ["bash", root.scripts + "stt-status.sh"]; interval: 1000 }
@@ -218,7 +218,7 @@ ShellRoot {
             for (let panel of root.panels) panel.capture(path);
         }
         function status(): string {
-            return JSON.stringify({codexNotifications: {stages: codexNotices.previous, resetTimes: codexNotices.resetTimes}, palette: root.palette, language: root.language, media: media.snapshot(), discord: discord.value, bluetooth: bluetooth.value, doNotDisturb: root.dndActive, manualDnd: root.manualDndEnabled, autoDndOnShare: root.autoDndOnShareEnabled, screenSharing: root.screenSharing, system: metrics.value, notifications: notifications.snapshot(), popups: notifications.popupSnapshot(), popupWindow: notificationPopups.snapshot(), bookmarks: bookmarks.snapshot(), control: control.snapshot(), notificationsCenter: notificationsCenter.snapshot(), five: five.value, weekly: weekly.value, disk: disk.value, boot: boot.value, stt: stt.value, alert: alert.value, tray: SystemTray.items.values.map(t => ({id: t.id, title: t.title, icon: t.icon, hasMenu: t.hasMenu})), workspaces: desktop.workspaces.map(w => ({id: w.id, name: w.name, active: w.active, monitor: w.monitor?.name})), volume: Pipewire.defaultAudioSink?.audio?.volume, muted: Pipewire.defaultAudioSink?.audio?.muted, panels: root.panels.map(p => p.snapshot())});
+            return JSON.stringify({claudeNotifications: {stages: claudeNotices.previous, resetTimes: claudeNotices.resetTimes}, palette: root.palette, language: root.language, media: media.snapshot(), discord: discord.value, bluetooth: bluetooth.value, doNotDisturb: root.dndActive, manualDnd: root.manualDndEnabled, autoDndOnShare: root.autoDndOnShareEnabled, screenSharing: root.screenSharing, system: metrics.value, notifications: notifications.snapshot(), popups: notifications.popupSnapshot(), popupWindow: notificationPopups.snapshot(), bookmarks: bookmarks.snapshot(), control: control.snapshot(), notificationsCenter: notificationsCenter.snapshot(), five: five.value, weekly: weekly.value, disk: disk.value, boot: boot.value, stt: stt.value, alert: alert.value, tray: SystemTray.items.values.map(t => ({id: t.id, title: t.title, icon: t.icon, hasMenu: t.hasMenu})), workspaces: desktop.workspaces.map(w => ({id: w.id, name: w.name, active: w.active, monitor: w.monitor?.name})), volume: Pipewire.defaultAudioSink?.audio?.volume, muted: Pipewire.defaultAudioSink?.audio?.muted, panels: root.panels.map(p => p.snapshot())});
         }
     }
     Variants {
@@ -294,7 +294,7 @@ ShellRoot {
                 function interact(module, action) {
                     if (module === "alert") { if (action === "left") alertModule.leftAction(); else if (action === "right") alertModule.rightAction(); }
                     else if (module === "disk") disk.refresh();
-                    else if (module === "five" || module === "weekly") root.action("codex_usage.sh", "toggle", () => root.refresh("codex"));
+                    else if (module === "five" || module === "weekly") root.action("claude_usage.sh", "toggle", () => root.refresh("claude"));
                     else if (module === "media" && media.player) {
                         if (action === "left" && media.player.canTogglePlaying) media.player.togglePlaying();
                         else if (action === "right" && media.player.canGoNext) media.player.next();

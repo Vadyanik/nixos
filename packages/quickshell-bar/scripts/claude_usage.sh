@@ -2,11 +2,15 @@
 
 set -o pipefail
 
-state_file="${XDG_RUNTIME_DIR:-/tmp}/waybar-codex-usage-mode"
-cache_file="${XDG_RUNTIME_DIR:-/tmp}/waybar-codex-usage.json"
-lock_file="${XDG_RUNTIME_DIR:-/tmp}/waybar-codex-usage.fetch.lock"
-log_dir="${XDG_STATE_HOME:-$HOME/.local/state}/waybar"
-log_file="$log_dir/codex_usage.csv"
+state_file="${XDG_RUNTIME_DIR:-/tmp}/quickshell-claude-usage-mode"
+cache_file="${XDG_RUNTIME_DIR:-/tmp}/quickshell-claude-usage.json"
+lock_file="${XDG_RUNTIME_DIR:-/tmp}/quickshell-claude-usage.fetch.lock"
+credentials="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/.credentials.json"
+usage_url="https://api.anthropic.com/api/oauth/usage"
+min_age=110      # seconds between API requests while healthy
+backoff=300      # seconds to wait after a failed request
+log_dir="${XDG_STATE_HOME:-$HOME/.local/state}/quickshell"
+log_file="$log_dir/claude_usage.csv"
 signal=9
 
 time_until() {
@@ -23,7 +27,7 @@ criticality() {
     local data="$1" now pace_result
 
     now="$(date +%s)"
-    pace_result="$(python3 "$(dirname "${BASH_SOURCE[0]}")/codex_pace.py" "$log_file" "$data" "$now" 2>/dev/null)" || pace_result='{"five":"N/A","weekly":"N/A"}'
+    pace_result="$(python3 "$(dirname "${BASH_SOURCE[0]}")/claude_pace.py" "$log_file" "$data" "$now" 2>/dev/null)" || pace_result='{"five":"N/A","weekly":"N/A"}'
     jq -cn --argjson pace "$pace_result" --argjson limits "$data" --argjson now "$now" '
         def assess($duration; $name):
             ([$limits.primary, $limits.secondary]
@@ -48,7 +52,7 @@ criticality() {
               end;
         [assess(300; "5h"), assess(10080; "Weekly")] | map(select(. != null)) as $results
         | if ($results | length) != 2 then
-            {class: "error", tooltip: "Codex limits are unavailable."}
+            {class: "error", tooltip: "Claude limits are unavailable."}
           else
             {
                 five_class: $results[0].class,
@@ -62,6 +66,26 @@ criticality() {
     ' || jq -nc '{class: "error", tooltip: "Could not calculate limit criticality."}'
 }
 
+# Print "limits" JSON in the shape the rest of the widget expects:
+# {primary: 5h window, secondary: 7d window}, each with usedPercent, windowDurationMins and epoch resetsAt.
+request() {
+    local expires
+    expires="$(jq -r '.claudeAiOauth.expiresAt // 0' "$credentials" 2>/dev/null)" || return 1
+    # Claude Code owns token refreshes; never rotate its refresh token from here.
+    (( expires / 1000 > $(date +%s) )) || return 1
+    # The bearer token travels over stdin, so it never reaches argv or the environment.
+    jq -r '"header = \"Authorization: Bearer \(.claudeAiOauth.accessToken)\""' "$credentials" |
+        curl -fsS --max-time 10 -K - \
+            -H 'anthropic-beta: oauth-2025-04-20' -H 'User-Agent: quickshell-bar' "$usage_url" |
+        jq -c '
+            def window($w; $minutes):
+                if $w == null then null else
+                    {usedPercent: ($w.utilization | round), windowDurationMins: $minutes,
+                     resetsAt: ($w.resets_at | sub("\\.[0-9]+"; "") | sub("\\+00:00$"; "Z") | fromdateiso8601)}
+                end;
+            {primary: window(.five_hour; 300), secondary: window(.seven_day; 10080)}'
+}
+
 fetch() (
     local data previous now
 
@@ -69,32 +93,27 @@ fetch() (
     exec 9> "$lock_file"
     flock -n 9 || return 0
     now="$(date +%s)"
-    if [[ -r "$cache_file" ]] && (( now - $(stat -c %Y "$cache_file") < 20 )); then
+    if [[ -r "$cache_file" ]] && (( now - $(stat -c %Y "$cache_file") < min_age )); then
         return 0
     fi
-    data="$({
-        printf '%s\n' '{"id":1,"method":"initialize","params":{"clientInfo":{"name":"waybar","version":"1"}}}'
-        sleep 1
-        printf '%s\n' '{"method":"initialized"}'
-        sleep 1
-        printf '%s\n' '{"id":2,"method":"account/rateLimits/read","params":null}'
-        sleep 5
-    } | timeout 10s codex app-server --stdio 2>/dev/null | jq -c 'select(.id == 2) | .result.rateLimits' 2>/dev/null)" || true
+    if [[ -e "$cache_file.fail" ]] && (( now - $(stat -c %Y "$cache_file.fail") < backoff )); then
+        return 0
+    fi
+    data="$(request 2>/dev/null)" || true
 
-    if ! jq -e '
-        [.primary, .secondary] | sort_by(.windowDurationMins)
-        | map(.windowDurationMins) == [300, 10080]
-    ' <<< "$data" >/dev/null 2>&1; then
-        printf '%s\n' 'Codex limit refresh failed; keeping the previous snapshot.' >&2
+    if ! jq -e '[.primary, .secondary] | map(.windowDurationMins) == [300, 10080]' <<< "$data" >/dev/null 2>&1; then
+        : > "$cache_file.fail"
+        printf '%s\n' 'Claude limit refresh failed; keeping the previous snapshot.' >&2
         return 1
     fi
+    rm -f "$cache_file.fail"
     previous='{}'
     [[ -r "$cache_file" ]] && previous="$(< "$cache_file")"
     now="$(date +%s)"
-    python3 "$(dirname "${BASH_SOURCE[0]}")/codex_history.py" "$log_file" "$data" "$previous" "$now" || return 1
+    python3 "$(dirname "${BASH_SOURCE[0]}")/claude_history.py" "$log_file" "$data" "$previous" "$now" || return 1
     printf '%s\n' "$data" > "$cache_file.tmp"
     mv "$cache_file.tmp" "$cache_file"
-    quickshell ipc -c bar call bar refresh codex >/dev/null 2>&1 || true
+    quickshell ipc -c bar call bar refresh claude >/dev/null 2>&1 || true
 )
 
 render() {
@@ -119,7 +138,7 @@ render() {
     fi
 
     if [[ -z "$data" || "$data" == "null" ]]; then
-        printf '%s\n' '{"text":"?","class":"error","tooltip":"Codex limits are unavailable."}'
+        printf '%s\n' '{"text":"?","class":"error","tooltip":"Claude limits are unavailable."}'
         return
     fi
 
@@ -185,7 +204,7 @@ status() {
 
 toggle() {
     local switched now
-    systemctl --user start --no-block quickshell-codex-usage.service 2>/dev/null || true
+    systemctl --user start --no-block quickshell-claude-usage.service 2>/dev/null || true
     now="$(date +%s)"
     if [[ -r "$state_file" ]]; then
         read -r switched < "$state_file" || true
@@ -194,9 +213,9 @@ toggle() {
         rm -f "$state_file"
     else
         printf '%s\n' "$now" > "$state_file"
-        (sleep 30; quickshell ipc -c bar call bar refresh codex >/dev/null 2>&1 || true) >/dev/null 2>&1 &
+        (sleep 30; quickshell ipc -c bar call bar refresh claude >/dev/null 2>&1 || true) >/dev/null 2>&1 &
     fi
-    quickshell ipc -c bar call bar refresh codex >/dev/null 2>&1 || true
+    quickshell ipc -c bar call bar refresh claude >/dev/null 2>&1 || true
 }
 
 # Allow the small regression check to source the shared calculations.

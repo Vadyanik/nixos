@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read Pace from the existing Waybar CSV, without writing any history."""
+"""Read Pace from the existing usage CSV, without writing any history."""
 import csv
 import fcntl
 import gzip

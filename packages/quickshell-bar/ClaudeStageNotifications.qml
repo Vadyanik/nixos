@@ -8,7 +8,7 @@ Item {
     property var previous: ({})
     property var limits: ({})
     property var resetTimes: ({})
-    property var notify: (title, body) => Quickshell.execDetached(["notify-send", "--app-name=Codex", "--expire-time=8000", "--", title, body])
+    property var notify: (title, body) => Quickshell.execDetached(["notify-send", "--app-name=Claude", "--expire-time=8000", "--", title, body])
     function observe(window, value) {
         value = value || {};
         let stage = value.class || "";

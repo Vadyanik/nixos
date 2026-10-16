@@ -20,7 +20,7 @@ PanelWindow {
     required property var bluetooth
     required property var vpnStatus
     required property var discord
-    readonly property alias codexLimits: codexSection.limits
+    readonly property alias claudeLimits: claudeSection.limits
     property bool opened: false
     property bool cornerReady: false
     property real reveal: 0
@@ -247,7 +247,7 @@ PanelWindow {
                         }
                     }
                     SystemSection { id: systemSection; width: parent.width; theme: panel.theme; shell: panel.shell; metrics: panel.metrics; boot: panel.boot; stt: panel.stt; bluetooth: panel.bluetooth }
-                    CodexSection { id: codexSection; width: parent.width; theme: panel.theme; shell: panel.shell; five: panel.five; weekly: panel.weekly }
+                    ClaudeSection { id: claudeSection; width: parent.width; theme: panel.theme; shell: panel.shell; five: panel.five; weekly: panel.weekly }
                     DiscordSection { width: parent.width; theme: panel.theme; status: panel.discord; onActionRequested: action => panel.discordActionRequested(action) }
                     MediaSection { id: mediaSection; width: parent.width; theme: panel.theme; service: panel.media; active: panel.opened }
                     BookmarksSection { width: parent.width; theme: panel.theme; service: panel.bookmarks; onActivated: panel.closeRequested() }

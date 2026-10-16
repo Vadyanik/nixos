@@ -13,7 +13,7 @@ Column {
     spacing: 10
     FileView {
         id: cached
-        path: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/waybar-codex-usage.json"
+        path: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/quickshell-claude-usage.json"
         blockLoading: true
         watchChanges: true
         printErrors: false
@@ -31,7 +31,7 @@ Column {
         let lines = (five.tooltip || weekly.tooltip || "").split("\n");
         return lines.slice(index * 2, index * 2 + 2).join("\n").trim().replace(/^(5h|Weekly): /, "Score: ");
     }
-    SectionHeader { width: parent.width; theme: section.theme; title: "CODEX" }
+    SectionHeader { width: parent.width; theme: section.theme; title: "CLAUDE" }
     Row {
         width: section.width
         spacing: 16
@@ -57,12 +57,12 @@ Column {
                 }
                 Text {
                     width: parent.width
-                    text: windowRow.limit ? "Used " + windowRow.limit.usedPercent + "% · Reset in " + section.countdown(windowRow.limit.resetsAt) + "\n" + Qt.formatDateTime(new Date(windowRow.limit.resetsAt * 1000), "dd.MM HH:mm") : "Codex limits are unavailable."
+                    text: windowRow.limit ? "Used " + windowRow.limit.usedPercent + "% · Reset in " + section.countdown(windowRow.limit.resetsAt) + "\n" + Qt.formatDateTime(new Date(windowRow.limit.resetsAt * 1000), "dd.MM HH:mm") : "Claude limits are unavailable."
                     color: section.theme.mutedForeground
                     font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 14 }
                     wrapMode: Text.Wrap
                 }
-                // The original score/normalization date/Pace strings come directly from codex_usage.sh.
+                // The original score/normalization date/Pace strings come directly from claude_usage.sh.
                 Text { width: parent.width; text: section.details(windowRow.modelData.index); color: section.theme.foreground; font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 16 } wrapMode: Text.Wrap }
                 Text {
                     visible: !!windowRow.status.class && windowRow.status.class !== "full"

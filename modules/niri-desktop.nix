@@ -62,6 +62,24 @@ in {
       RestartSec = 3;
     };
   };
+  systemd.user.services.quickshell-claude-usage = {
+    description = "Refresh Claude subscription limits and preserve usage history";
+    path = with pkgs; [ bash coreutils curl jq python3 util-linux systemd quickshell ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${bar}/share/quickshell/bar/scripts/claude_usage.sh fetch";
+      TimeoutStartSec = 20;
+    };
+  };
+  systemd.user.timers.quickshell-claude-usage = {
+    description = "Refresh Claude limits every two minutes";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnActiveSec = 1;
+      OnUnitActiveSec = 120;
+      AccuracySec = 1;
+    };
+  };
   systemd.user.services.desktop-clipboard-text = clipboardService "text";
   systemd.user.services.desktop-clipboard-image = clipboardService "image";
   systemd.user.services.ghostty-wallpaper-theme = {
@@ -107,7 +125,7 @@ in {
     adopt_desktop_link /run/current-system/sw/bin/wallpaper-next "$desktopHome/.local/bin/wallpaper-next"
     adopt_desktop_link /run/current-system/sw/bin/wallpaper-workspace "$desktopHome/.local/bin/wallpaper-workspace"
     adopt_desktop_link ${desktopTools}/bin/ghostty-wallpaper-theme "$desktopHome/.local/bin/ghostty-wallpaper-theme"
-    for unit in quickshell-bar.service ghostty-wallpaper-theme.service ghostty-wallpaper-theme.path space-wallpaper-notify.service space-wallpaper-notify.timer; do
+    for unit in quickshell-bar.service ghostty-wallpaper-theme.service ghostty-wallpaper-theme.path space-wallpaper-notify.service space-wallpaper-notify.timer quickshell-claude-usage.service quickshell-claude-usage.timer; do
       adopt_desktop_link "/etc/systemd/user/$unit" "$desktopHome/.config/systemd/user/$unit"
     done
     target="$desktopHome/.config/systemd/user/space-wallpaper-daemon.service.d"

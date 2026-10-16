@@ -69,21 +69,12 @@ def focus(args):
     parser.add_argument('--app')
     parser.add_argument('--desktop')
     parser.add_argument('--pid', type=lambda value: int(value) if value else None)
-    parser.add_argument('--title')
     parser.add_argument('--launch')
     opts = parser.parse_args(args)
     needles = {normalize(n) for n in (opts.name, opts.app, opts.desktop) if n}
-
-    def matches(window):
-        return (
-            (opts.pid and window.get('pid') == opts.pid)
-            or normalize(window.get('app_id', window.get('class'))) in needles
-            or (opts.title and window.get('title') == opts.title)
-        )
-
     for attempt in range(8):
         windows = query('windows' if os.environ.get('NIRI_SOCKET') else 'clients')
-        window = next((w for w in windows if matches(w)), None)
+        window = next((w for w in windows if (opts.pid and w.get('pid') == opts.pid) or normalize(w.get('app_id', w.get('class'))) in needles), None)
         if window:
             if os.environ.get('NIRI_SOCKET'):
                 action('focus-window', '--id', window['id'])

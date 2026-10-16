@@ -11,6 +11,9 @@ let
     "#!${pkgs.python3}/bin/python3\n" + builtins.readFile ../packages/niri/workspace-zoom.py
   );
   desktopTools = import ../packages/desktop-session/package.nix { inherit pkgs; };
+  claudeCodeTerminal = pkgs.writeShellScriptBin "claude-code-terminal" ''
+    exec ${pkgs.ghostty}/bin/ghostty --class=claude-code --title="Claude Code" -e ${pkgs.claude-code}/bin/claude "$@"
+  '';
   bar = import ../packages/quickshell-bar/package.nix { inherit pkgs desktopTools; };
   rofi = import ../packages/rofi/package.nix { inherit pkgs; };
   sessionStart = pkgs.writeShellApplication {
@@ -39,7 +42,7 @@ in {
     useNautilus = false;
   };
   environment.systemPackages = [
-    desktopTools bar rofi sessionStart workspaceZoom pkgs.xwayland-satellite pkgs.swappy
+    desktopTools bar rofi sessionStart workspaceZoom claudeCodeTerminal pkgs.xwayland-satellite pkgs.swappy
   ];
   environment.etc."xdg/niri/config.kdl".source = ../packages/niri/config.kdl;
   environment.etc."xdg/niri/hotkeys.kdl".source = ../packages/niri/hotkeys.kdl;

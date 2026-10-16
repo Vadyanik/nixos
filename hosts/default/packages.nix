@@ -220,6 +220,7 @@ in
         zip
     zed-editor
     claude-desktop
+    claude-code
     # vnix:end
   ];
 }

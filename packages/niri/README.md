@@ -85,7 +85,7 @@ uses `Alt` for bindings written with `Mod` to reduce host shortcut collisions.
 | Super+F1 | Start voice recording |
 | Super+Shift+F1 | Finish recording and transcribe |
 | Super+Ctrl+F1 | Cancel recording or transcription |
-| Super+Z | Focus Codex, or launch it if absent |
+| Super+Z | Focus Claude Code, or open it in Ghostty if absent |
 | Super+B | Themed clipboard history |
 | Super+P / Shift+Print | Select screenshot region and copy it |
 | Print | Select screenshot region and open annotation editor |

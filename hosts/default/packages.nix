@@ -8,10 +8,27 @@ let
       url = "https://github.com/Voxelum/x-minecraft-launcher/releases/download/v0.62.0/xmcl-0.62.0-x86_64.AppImage";
       sha256 = "sha256-u3HZLTqeDia1gblEn02Xtk3bOwbFanWh2RAJhc4el1U=";
     };
-    extraPkgs = pkgs: with pkgs; [
-      libGL libGLU glib nss nspr atk cups libdrm mesa libxkbcommon pango
-      (lib.getLib stdenv.cc.cc) alsa-lib dbus gtk3 expat udev vulkan-loader
-    ];
+    extraPkgs =
+      pkgs: with pkgs; [
+        libGL
+        libGLU
+        glib
+        nss
+        nspr
+        atk
+        cups
+        libdrm
+        mesa
+        libxkbcommon
+        pango
+        (lib.getLib stdenv.cc.cc)
+        alsa-lib
+        dbus
+        gtk3
+        expat
+        udev
+        vulkan-loader
+      ];
   };
   xmcl = pkgs.writeShellScriptBin "xmcl" ''
     exec ${xmcl-app}/bin/xmcl --no-sandbox "$@"
@@ -217,10 +234,11 @@ in
     ncspot
     playerctl
     psst
-        zip
+    zip
     zed-editor
     claude-desktop
     claude-code
+    qbittorrent
     # vnix:end
   ];
 }

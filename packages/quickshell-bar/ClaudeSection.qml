@@ -21,7 +21,9 @@ Column {
         onLoaded: { try { section.limits = JSON.parse(text()); } catch (e) { section.limits = {}; } }
     }
     SystemClock { id: clock; precision: SystemClock.Minutes }
-    function window(duration) { return [limits.primary, limits.secondary].find(w => w?.windowDurationMins === duration) || null; }
+    function window(duration) { return five.class === "error" ? null : [limits.primary, limits.secondary].find(w => w?.windowDurationMins === duration) || null; }
+    // A window with no reset time, or one that has already elapsed, is not running.
+    function running(limit) { return !!limit && limit.resetsAt * 1000 > clock.date.getTime(); }
     function countdown(reset) {
         if (!reset) return "—";
         let minutes = Math.max(0, Math.floor((reset * 1000 - clock.date.getTime()) / 60000));
@@ -42,7 +44,8 @@ Column {
                 required property var modelData
                 readonly property var limit: section.window(modelData.duration)
                 readonly property var status: modelData.index === 0 ? section.five : section.weekly
-                readonly property real remaining: limit ? Math.max(0, Math.min(100, 100 - limit.usedPercent)) : 0
+                readonly property bool running: section.running(limit)
+                readonly property real remaining: running ? Math.max(0, Math.min(100, 100 - limit.usedPercent)) : (limit ? 100 : 0)
                 visible: !!limit
                 width: (section.width - 16) / 2
                 spacing: 6
@@ -57,7 +60,7 @@ Column {
                 }
                 Text {
                     width: parent.width
-                    text: windowRow.limit ? "Used " + windowRow.limit.usedPercent + "% · Reset in " + section.countdown(windowRow.limit.resetsAt) + "\n" + Qt.formatDateTime(new Date(windowRow.limit.resetsAt * 1000), "dd.MM HH:mm") : "Claude limits are unavailable."
+                    text: !windowRow.limit ? "Claude limits are unavailable." : !windowRow.running ? "Used 0% · Starts with your next message" : "Used " + windowRow.limit.usedPercent + "% · Reset in " + section.countdown(windowRow.limit.resetsAt) + "\n" + Qt.formatDateTime(new Date(windowRow.limit.resetsAt * 1000), "dd.MM HH:mm")
                     color: section.theme.mutedForeground
                     font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 14 }
                     wrapMode: Text.Wrap

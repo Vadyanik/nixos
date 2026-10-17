@@ -7,6 +7,8 @@ cache_file="${XDG_RUNTIME_DIR:-/tmp}/quickshell-claude-usage.json"
 lock_file="${XDG_RUNTIME_DIR:-/tmp}/quickshell-claude-usage.fetch.lock"
 credentials="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/.credentials.json"
 usage_url="https://api.anthropic.com/api/oauth/usage"
+token_url="https://platform.claude.com/v1/oauth/token"
+client_id="9d1c250a-e61b-44d9-88ed-5944d1962f5e"   # Claude Code's public OAuth client
 min_age=110      # seconds between API requests while healthy
 backoff=300      # seconds to wait after a failed request
 log_dir="${XDG_STATE_HOME:-$HOME/.local/state}/quickshell"
@@ -34,8 +36,8 @@ criticality() {
              | map(select(. != null and .windowDurationMins == $duration))
              | .[0]) as $limit
             | if $limit == null then null else
-                (($limit.resetsAt // $now) - $now) as $seconds
-                | (if $seconds <= 0 then 999 else
+                (($limit.resetsAt // 0) - $now) as $seconds
+                | (if $seconds <= 0 then 1 else
                     ((100 - ($limit.usedPercent // 0)) / 100) / ($seconds / ($duration * 60))
                    end) as $score
                 | (if $score >= 1.50 then {class: "excess", rank: 0}
@@ -66,20 +68,39 @@ criticality() {
     ' || jq -nc '{class: "error", tooltip: "Could not calculate limit criticality."}'
 }
 
+# Access tokens last about eight hours and only Claude Code renews them, so renew here
+# when needed and store the result the way Claude Code does (atomic write, mode 0600).
+refresh_token() {
+    local response tmp
+    response="$(jq -c --arg id "$client_id" '{grant_type: "refresh_token", refresh_token: .claudeAiOauth.refreshToken, client_id: $id}' "$credentials" |
+        curl -fsS --max-time 10 -H 'Content-Type: application/json' -H 'User-Agent: claude-cli/2.1.296 (external, cli)' --data @- "$token_url")" || return 1
+    tmp="$(mktemp "$credentials.XXXXXX")" || return 1
+    if jq --argjson r "$response" --argjson now "$(date +%s)" '
+            .claudeAiOauth += {accessToken: $r.access_token,
+                               refreshToken: ($r.refresh_token // .claudeAiOauth.refreshToken),
+                               expiresAt: (($now + $r.expires_in) * 1000)}' "$credentials" > "$tmp" &&
+       jq -e '.claudeAiOauth.accessToken | strings | length > 0' "$tmp" >/dev/null; then
+        chmod 600 "$tmp" && mv "$tmp" "$credentials"
+    else
+        rm -f "$tmp"
+        return 1
+    fi
+}
+
 # Print "limits" JSON in the shape the rest of the widget expects:
 # {primary: 5h window, secondary: 7d window}, each with usedPercent, windowDurationMins and epoch resetsAt.
 request() {
     local expires
     expires="$(jq -r '.claudeAiOauth.expiresAt // 0' "$credentials" 2>/dev/null)" || return 1
-    # Claude Code owns token refreshes; never rotate its refresh token from here.
-    (( expires / 1000 > $(date +%s) )) || return 1
+    (( expires / 1000 > $(date +%s) + 60 )) || refresh_token || return 1
     # The bearer token travels over stdin, so it never reaches argv or the environment.
     jq -r '"header = \"Authorization: Bearer \(.claudeAiOauth.accessToken)\""' "$credentials" |
         curl -fsS --max-time 10 -K - \
             -H 'anthropic-beta: oauth-2025-04-20' -H 'User-Agent: quickshell-bar' "$usage_url" |
         jq -c '
+            # A null window means none is running (it starts with the next message): 0% used, no reset.
             def window($w; $minutes):
-                if $w == null then null else
+                if $w == null then {usedPercent: 0, windowDurationMins: $minutes, resetsAt: 0} else
                     {usedPercent: ($w.utilization | round), windowDurationMins: $minutes,
                      resetsAt: ($w.resets_at | sub("\\.[0-9]+"; "") | sub("\\+00:00$"; "Z") | fromdateiso8601)}
                 end;
@@ -146,6 +167,8 @@ render() {
         [[ -n "$used" ]] || continue
 
         remaining=$((100 - used))
+        # An elapsed window has reset; the cached usage is stale.
+        [[ "$reset" =~ ^[0-9]+$ ]] && (( reset <= $(date +%s) )) && { remaining=100; reset=0; }
 
         case "$minutes" in
             300)
@@ -198,7 +221,8 @@ render() {
 
 status() {
     local data=""
-    [[ -r "$cache_file" ]] && data="$(< "$cache_file")"
+    # Data older than 15 minutes means refreshes are failing; say so instead of showing old numbers.
+    [[ -r "$cache_file" ]] && (( $(date +%s) - $(stat -c %Y "$cache_file") < 900 )) && data="$(< "$cache_file")"
     render "$data" "${1:-five}"
 }
 

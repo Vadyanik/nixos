@@ -396,7 +396,7 @@ ShellRoot {
                                     function setMenuOpen(open) { if (modelData.hasMenu) { if (open) menu.open(); else if (menu.visible) menu.close(); } }
                                     visible: modelData.status !== Status.Passive
                                     width: visible ? 20 : 0; height: 32
-                                    Image { anchors.centerIn: parent; width: 20; height: 20; source: modelData.icon; asynchronous: true }
+                                    Image { anchors.centerIn: parent; width: 20; height: 20; source: modelData.icon; asynchronous: false } // sync: async loads read the SNI pixmap off-thread and segfault when the item unregisters
                                     QsMenuAnchor { id: menu; menu: trayItem.modelData.menu; anchor.item: trayItem; anchor.edges: Edges.Bottom; anchor.gravity: Edges.Bottom }
                                     MouseArea {
                                         anchors.fill: parent

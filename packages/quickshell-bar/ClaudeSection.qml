@@ -9,7 +9,6 @@ Column {
     required property var weekly
     required property var shell
     property var limits: ({})
-    visible: !!window(300) || !!window(10080)
     spacing: 10
     FileView {
         id: cached
@@ -34,6 +33,13 @@ Column {
         return lines.slice(index * 2, index * 2 + 2).join("\n").trim().replace(/^(5h|Weekly): /, "Score: ");
     }
     SectionHeader { width: parent.width; theme: section.theme; title: "CLAUDE" }
+    // Never hide the whole section: a failing refresh must be visible, not look like a missing module.
+    Text {
+        visible: !section.window(300) && !section.window(10080)
+        text: "Claude limits are unavailable."
+        color: section.theme.mutedForeground
+        font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 14 }
+    }
     Row {
         width: section.width
         spacing: 16

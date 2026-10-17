@@ -98,10 +98,10 @@ request() {
         curl -fsS --max-time 10 -K - \
             -H 'anthropic-beta: oauth-2025-04-20' -H 'User-Agent: quickshell-bar' "$usage_url" |
         jq -c '
-            # A null window means none is running (it starts with the next message): 0% used, no reset.
+            # A null window (or one without a reset time) means none is running (it starts with the next message): 0% used, no reset.
             def window($w; $minutes):
-                if $w == null then {usedPercent: 0, windowDurationMins: $minutes, resetsAt: 0} else
-                    {usedPercent: ($w.utilization | round), windowDurationMins: $minutes,
+                if $w == null or $w.resets_at == null then {usedPercent: 0, windowDurationMins: $minutes, resetsAt: 0} else
+                    {usedPercent: (($w.utilization // 0) | round), windowDurationMins: $minutes,
                      resetsAt: ($w.resets_at | sub("\\.[0-9]+"; "") | sub("\\+00:00$"; "Z") | fromdateiso8601)}
                 end;
             {primary: window(.five_hour; 300), secondary: window(.seven_day; 10080)}'

@@ -30,7 +30,7 @@ Column {
     }
     function details(index) {
         let lines = (five.tooltip || weekly.tooltip || "").split("\n");
-        return lines.slice(index * 2, index * 2 + 2).join("\n").trim().replace(/^(5h|Weekly): /, "Score: ");
+        return lines.slice(index, index + 1)  // Pace disabled: one line per window (was index * 2, index * 2 + 2).join("\n").trim().replace(/^(5h|Weekly): /, "Score: ");
     }
     SectionHeader { width: parent.width; theme: section.theme; title: "CLAUDE" }
     // Never hide the whole section: a failing refresh must be visible, not look like a missing module.

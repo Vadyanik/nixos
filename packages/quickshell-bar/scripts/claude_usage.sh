@@ -29,8 +29,9 @@ criticality() {
     local data="$1" now pace_result
 
     now="$(date +%s)"
-    pace_result="$(python3 "$(dirname "${BASH_SOURCE[0]}")/claude_pace.py" "$log_file" "$data" "$now" 2>/dev/null)" || pace_result='{"five":"N/A","weekly":"N/A"}'
-    jq -cn --argjson pace "$pace_result" --argjson limits "$data" --argjson now "$now" '
+    # Pace disabled (re-enable together with the two Pace lines below and slice(index * 2, ...) in ClaudeSection.qml).
+    # pace_result="$(python3 "$(dirname "${BASH_SOURCE[0]}")/claude_pace.py" "$log_file" "$data" "$now" 2>/dev/null)" || pace_result='{"five":"N/A","weekly":"N/A"}'
+    jq -cn --argjson limits "$data" --argjson now "$now" '
         def assess($duration; $name):
             ([$limits.primary, $limits.secondary]
              | map(select(. != null and .windowDurationMins == $duration))
@@ -61,8 +62,10 @@ criticality() {
                 weekly_class: $results[1].class,
                 tooltip: ($results | map("\(.name): \(.score * 100 | round / 100)" +
                     (if .normal_at == null then "" else " → \(.normal_at / 60 | ceil * 60 | strflocaltime("%d.%m %H:%M"))" end) +
-                    (if .name == "5h" then "\n  Pace (1h): \($pace.five)"
-                     else "\n  Pace (24h): \($pace.weekly)" end)) | join("\n"))
+                    ""
+                    # (if .name == "5h" then "\n  Pace (1h): \($pace.five)"
+                    #  else "\n  Pace (24h): \($pace.weekly)" end)
+                   ) | join("\n"))
               }
           end
     ' || jq -nc '{class: "error", tooltip: "Could not calculate limit criticality."}'

@@ -239,6 +239,7 @@ in
     claude-desktop
     claude-code
     qbittorrent
+    godot
     # vnix:end
   ];
 }

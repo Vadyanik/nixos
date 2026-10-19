@@ -139,6 +139,10 @@ select {
 *::before,
 *::after {
   border-radius: 0 !important;
+  border-start-start-radius: 0 !important;
+  border-start-end-radius: 0 !important;
+  border-end-start-radius: 0 !important;
+  border-end-end-radius: 0 !important;
 }
 
 [class*="floating_"],

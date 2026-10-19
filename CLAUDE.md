@@ -13,12 +13,12 @@ vnix install PKG...      # add attributes to the managed block (plain attributes
 vnix remove PKG...
 vnix packages list
 vnix update              # nix flake update only; review `git diff flake.lock`
-vnix plan                # flake check + dry-build + dry-activate; always run before rebuild
+vnix plan                # flake check + dry-build + dry-activate; optional, usually skip it and go straight to rebuild (user's preference)
 vnix rebuild             # sudo nixos-rebuild switch --flake /etc/nixos#nixos, then hooks
 vnix drift | stats | generations list
 ```
 
-Anything beyond plain package attributes (modules, services, overrides) is edited by hand in the Nix files, then `vnix plan` and `vnix rebuild`. Caution: `vnix rebuild` is configured to `git add .`, commit (via `aic -p`), and **force-push `main`** to `origin`, and runs a profile-stats hook. Only run it when the user wants the change activated and published.
+Anything beyond plain package attributes (modules, services, overrides) is edited by hand in the Nix files, then `vnix rebuild` (`vnix plan` is optional and mostly unnecessary). Caution: `vnix rebuild` is configured to `git add .`, commit (via `aic -p`), and **force-push `main`** to `origin`, and runs a profile-stats hook. Only run it when the user wants the change activated and published.
 
 ## Manual validation
 

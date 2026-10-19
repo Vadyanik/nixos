@@ -76,10 +76,10 @@ window-rule {
     draw-border-with-background false
     background-effect { blur true; }
 }
-// Translucent application windows; everything else keeps full opacity.
+// Claude is translucent as a whole window. Vesktop makes only its own background
+// transparent (quickCss), so it keeps full window opacity and just gets blur.
 window-rule {
     match app-id=r#"^com\.anthropic\.Claude$"#
-    match app-id="^discord$"
     opacity 0.85
     background-effect { blur true; }
 }

@@ -5,7 +5,8 @@
     ./hardware-configuration.nix
     ./packages.nix
     ../../modules/system.nix
-    ../../modules/space-wallpaper.nix
+    ../../modules/parallax-wallpaper.nix
+    # Legacy NASA wallpaper rotation, disabled: ../../legacy/space-wallpaper.nix
     ../../modules/desktop-widgets.nix
     ../../modules/niri-desktop.nix
     ../../modules/librewolf-theme.nix

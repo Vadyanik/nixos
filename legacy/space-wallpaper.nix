@@ -1,10 +1,10 @@
 { pkgs, ... }:
 let
-  wallpaper = import ../packages/space-wallpaper/package.nix { inherit pkgs; };
-  settings = builtins.fromJSON (builtins.readFile ../packages/space-wallpaper/settings.json);
+  wallpaper = import ./space-wallpaper/package.nix { inherit pkgs; };
+  settings = builtins.fromJSON (builtins.readFile ./space-wallpaper/settings.json);
 in
 {
-  environment.etc."space-wallpaper/settings.json".source = ../packages/space-wallpaper/settings.json;
+  environment.etc."space-wallpaper/settings.json".source = ./space-wallpaper/settings.json;
 
   systemd.user.services.space-wallpaper-daemon = {
     description = "Space wallpaper Wayland background";

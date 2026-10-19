@@ -10,7 +10,7 @@ let
   ];
 in pkgs.runCommand "desktop-widgets" { nativeBuildInputs = [ pkgs.makeWrapper ]; } ''
   mkdir -p $out/share/desktop-widgets $out/bin
-  cp ${./.}/{shell.qml,WallpaperParallax.qml,parallax-pointer.py,cava.conf,caption-size.py,animation-bridge.py} $out/share/desktop-widgets/
+  cp ${./.}/{shell.qml,WallpaperParallax.qml,parallax-pointer.py,cava.conf,animation-bridge.py} $out/share/desktop-widgets/
   substituteInPlace $out/share/desktop-widgets/shell.qml \
     --replace-fail '@python@' '${python}/bin/python3' \
     --replace-fail '@configDir@' "$out/share/desktop-widgets/"

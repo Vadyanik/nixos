@@ -45,7 +45,7 @@ ShellRoot {
     Process {
         id: workspaceWallpaperWatcher
         command: ["wallpaper-workspace", "watch"]
-        running: true
+        running: false // Legacy per-workspace wallpapers; see legacy/space-wallpaper
         stdout: StdioCollector {}
         stderr: StdioCollector { onStreamFinished: if (text.trim()) console.warn("Workspace wallpaper watcher:", text.trim()) }
         onExited: (code, status) => {

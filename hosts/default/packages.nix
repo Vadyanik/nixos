@@ -115,7 +115,6 @@ in
     jq
     awww
     matugen
-    (import ../../packages/space-wallpaper/package.nix { inherit pkgs; })
     go
     csharpier
 

@@ -30,17 +30,18 @@ nix build path:/etc/nixos#nixosConfigurations.nixos.config.system.build.toplevel
 bash -n rebuild.sh                                                                         # legacy helper syntax check
 ```
 
-There is no CI or lint step. The only tests are `packages/space-wallpaper/test_wallpaper.py` (unittest, needs the package's Pillow-enabled Python: `python test_wallpaper.py`) and `packages/desktop-widgets/check.py <built-package-path>` (animation smoke test).
+There is no CI or lint step. The only tests are the legacy `legacy/space-wallpaper/test_wallpaper.py` (unittest, needs Pillow) and `packages/desktop-widgets/check.py <built-package-path>` (animation smoke test).
 
 `rebuild.sh` is the older hand-written equivalent of `vnix rebuild`; prefer VNix.
 
 ## Architecture
 
 - `hosts/default/configuration.nix` imports hardware, `packages.nix` (all `environment.systemPackages`), and the modules. `modules/system.nix` = machine-wide; `modules/user.nix` = account/zsh/Spicetify/MIME/user services. Never create `modules/vnix.nix`; never edit/regenerate `hardware-configuration.nix` without approval.
-- Feature modules (`niri-desktop.nix`, `space-wallpaper.nix`, `desktop-widgets.nix`, `librewolf-theme.nix`, `poltertype.nix`) each pair with a source directory under `packages/<name>/` that holds the actual QML/Python/KDL/shell. The module builds the package (`import ../packages/<name>/package.nix { inherit pkgs; }`), wires systemd user services, and installs config via `environment.etc`.
+- Feature modules (`niri-desktop.nix`, `parallax-wallpaper.nix`, `desktop-widgets.nix`, `librewolf-theme.nix`, `poltertype.nix`) each pair with a source directory under `packages/<name>/` that holds the actual QML/Python/KDL/shell. The module builds the package (`import ../packages/<name>/package.nix { inherit pkgs; }`), wires systemd user services, and installs config via `environment.etc`.
 - Desktop layering: `niri-desktop.nix` builds a **patched Niri** (`packages/niri/workspace-zoom.patch`, asserts Niri version `26.04` — rebase the patch before bumping nixpkgs' Niri), `desktop-session` (shared Python tooling, `desktop-session-env` imports the session environment for services), the Quickshell bar (`packages/quickshell-bar`, scripts in `scripts/`, built with `qsb` shaders and `hotkeys.json` generated from `packages/niri/hotkeys.kdl`), and Rofi. `desktop-session-start` starts the user services.
 - Config files are shipped to `/etc/xdg/...` and **adopted** into `~/.config/...` as symlinks by an activation script in `niri-desktop.nix` (replaced local files are archived under `~/.local/state/desktop-nix-migration/`). Edit the repo sources, not the `~/.config` links.
 - Hyprland stays installed alongside Niri; don't launch a second compositor to validate config while one is running on the seat.
+- Wallpapers: `parallax-wallpaper` draws two-layer parallax art (Quickshell, mouse-driven) from `packages/parallax-wallpaper/assets/<id>/`; switch with `parallax-wallpaper set <id>` (also installs that wallpaper's palette into `colors.css`). The old NASA rotation lives in `legacy/` and is not imported.
 - Flake inputs of note: `claude-desktop` (overlay), `codex-desktop-linux` (NixOS module), `spicetify-nix`, `awww` (wallpaper daemon).
 
 ## Conventions

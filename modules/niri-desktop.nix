@@ -18,7 +18,7 @@ let
     runtimeInputs = [ pkgs.systemd pkgs.dbus ];
     text = ''
       ${desktopTools}/bin/desktop-session-env --import
-      systemctl --user start space-wallpaper-daemon.service quickshell-bar.service quickshell-widgets.service
+      systemctl --user start parallax-wallpaper.service quickshell-bar.service quickshell-widgets.service
       systemctl --user start polkit-gnome-authentication-agent-1.service desktop-clipboard-text.service desktop-clipboard-image.service
       systemctl --user start dev.opensource.poltertype.service
     '';
@@ -122,10 +122,8 @@ in {
     adopt_desktop_link /etc/xdg/niri/config.kdl "$desktopHome/.config/niri/config.kdl"
     adopt_desktop_link ${rofi}/bin/rofi-launcher "$desktopHome/.config/rofi/scripts/launcher.py"
     adopt_desktop_link ${rofi}/bin/themed-rofi "$desktopHome/.config/rofi/scripts/themed-rofi.py"
-    adopt_desktop_link /run/current-system/sw/bin/wallpaper-next "$desktopHome/.local/bin/wallpaper-next"
-    adopt_desktop_link /run/current-system/sw/bin/wallpaper-workspace "$desktopHome/.local/bin/wallpaper-workspace"
     adopt_desktop_link ${desktopTools}/bin/ghostty-wallpaper-theme "$desktopHome/.local/bin/ghostty-wallpaper-theme"
-    for unit in quickshell-bar.service ghostty-wallpaper-theme.service ghostty-wallpaper-theme.path space-wallpaper-notify.service space-wallpaper-notify.timer quickshell-claude-usage.service quickshell-claude-usage.timer; do
+    for unit in quickshell-bar.service ghostty-wallpaper-theme.service ghostty-wallpaper-theme.path quickshell-claude-usage.service quickshell-claude-usage.timer; do
       adopt_desktop_link "/etc/systemd/user/$unit" "$desktopHome/.config/systemd/user/$unit"
     done
     target="$desktopHome/.config/systemd/user/space-wallpaper-daemon.service.d"

@@ -1,0 +1,9 @@
+{
+  "default": "00004",
+  "wallpapers": {
+    "00004": { "title": "Lonely Moon",    "focusY": 0.55, "back": 0.012, "front": 0.035 },
+    "00007": { "title": "Sunrise/Sunset", "focusY": 0.5,  "back": 0.010, "front": 0.030 },
+    "00018": { "title": "X",              "focusY": 0.5,  "back": 0.012, "front": 0.035 },
+    "00020": { "title": "Sky Trail",      "focusY": 0.5,  "back": 0.010, "front": 0.030 }
+  }
+}

@@ -142,24 +142,8 @@ ShellRoot {
         watchChanges: true
         onFileChanged: reload()
     }
-    FileView {
-        path: Quickshell.env("HOME") + "/.local/state/space-wallpaper/shuffle.json"
-        watchChanges: true
-        onFileChanged: { reload(); captionMeasure.running = true; }
-    }
-    FileView {
-        path: "/etc/space-wallpaper/settings.json"
-        watchChanges: true
-        onFileChanged: { reload(); captionMeasure.running = true; }
-    }
-    Process {
-        id: captionMeasure
-        command: ["@python@", root.configDir + "caption-size.py"]
-        running: true
-        stdout: SplitParser {
-            onRead: data => root.caption = JSON.parse(data)
-        }
-    }
+    // Legacy NASA captions are disabled (see legacy/space-wallpaper); the default
+    // caption rectangle above keeps the music and animation windows in place.
     readonly property string configDir: "@configDir@"
 
     WallpaperParallax { id: parallax; python: "@python@"; configDir: root.configDir }

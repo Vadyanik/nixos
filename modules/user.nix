@@ -44,7 +44,6 @@ in
       "wheel"
       "libvirtd"
       "kvm"
-      "docker"
       "input"
       "uinput"
     ];

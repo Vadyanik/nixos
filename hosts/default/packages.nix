@@ -49,17 +49,13 @@ in
     fastfetch
     zellij
     tig
-    hypridle
     tmux
     toilet
     git
-    kitty
     hyprlock
-    appimage-run
     rofi
     github-cli
     librewolf
-    firefox
     pavucontrol
     opencode
     chromium
@@ -69,7 +65,6 @@ in
     tor-browser
     ulauncher
     blockbench
-    blender
     xmcl-app
     xmcl
     xmcl-desktop
@@ -77,7 +72,6 @@ in
     dotnet-sdk_8
     jdk21_headless
     fzf
-    bubblewrap
     cava
     quickshell
     lavat
@@ -90,15 +84,12 @@ in
     (import ../../packages/desktop-widgets/programs.nix { inherit pkgs; }).sortty
     (import ../../packages/desktop-widgets/programs.nix { inherit pkgs; }).ascii-rain
     (import ../../packages/desktop-widgets/package.nix { inherit pkgs; })
-    bc
     grim
     slurp
     wl-clipboard
     unzip
     ayugram-desktop
-    obsidian
     zoom-us
-    ollama
     qview
     glib
     dconf
@@ -111,33 +102,20 @@ in
     kdePackages.kio-admin
     kdePackages.kio-fuse
     kdePackages.ark
-    kdePackages.kfind
-    kdePackages.filelight
     kdePackages.konsole
-    kdePackages.okular
     kdePackages.kate
     kdePackages.ffmpegthumbs
     kdePackages.kdegraphics-thumbnailers
     kdePackages.kimageformats
     kdePackages.qtimageformats
     kdePackages.baloo-widgets
-    samba
-    cifs-utils
-    nfs-utils
-    sshfs
     p7zip
-    unrar
     mpv
-    vlc
     easyeffects
     jq
-    wineWow64Packages.stagingFull
-    winetricks
-    hyprpaper
     awww
     matugen
     (import ../../packages/space-wallpaper/package.nix { inherit pkgs; })
-    zenity
     go
     csharpier
 
@@ -184,7 +162,6 @@ in
     lazygit
 
     python3
-    ruby
     wget
     unzip
 
@@ -194,23 +171,20 @@ in
     nodejs_22 # Node.js and npm for JS, TS, CSS, and Tailwind LSPs.
 
     sqlite # Gives Snacks.picker sqlite history and frequency storage.
-    lua51Packages.luarocks
-    lua5_1
     trash-cli # Lets Snacks.explorer move files to trash instead of deleting permanently.
     ghostscript # Enables PDF previews in Neovim through Snacks.image.
     ast-grep # Structural search for grug-far.
 
     python3Packages.python-lsp-server # Base Python LSP.
     python3Packages.pip # Lets Mason install Python packages when needed.
-    pipx
     cargo # Rust tooling for formatters and linters.
 
-    stylua # Lua formatter for the Neovim config.
+     # Lua formatter for the Neovim config.
     prettier # Formatter for HTML, JSON, Markdown, JS, and more.
-    checkstyle # Java checks.
+     # Java checks.
 
-    tectonic # LaTeX engine for formula rendering.
-    mermaid-cli # Mermaid diagram rendering.
+     # LaTeX engine for formula rendering.
+     # Mermaid diagram rendering.
 
     anki
     bat # Syntax-highlighted cat replacement used in previews.
@@ -220,11 +194,9 @@ in
 
     fuse3
     icu
-    docker
     ngrok
     localsend
     rclone
-    pandoc
     ffmpeg
     imagemagick
     libreoffice
@@ -235,11 +207,9 @@ in
     playerctl
     psst
     zip
-    zed-editor
     claude-desktop
     claude-code
     qbittorrent
-    godot
     # vnix:end
   ];
 }

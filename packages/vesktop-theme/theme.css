@@ -1,0 +1,212 @@
+/* Terminal-like Vesktop theme for the Niri + Quickshell desktop.
+ * Palette variables (--qs-*) are prepended by sync.py from the shared wallpaper palette.
+ * Backgrounds stay translucent so Niri's compositor blur shows through; media stays opaque.
+ */
+:root,
+.theme-dark,
+.theme-darker,
+.theme-midnight,
+.theme-light {
+  color-scheme: dark;
+
+  /* Translucent layers derived from the Quickshell surface formula. */
+  --vd-bg: color-mix(in srgb, var(--qs-bg) 62%, transparent);
+  --vd-surface: color-mix(in srgb, var(--qs-surface) 58%, transparent);
+  --vd-elevated: color-mix(in srgb, var(--qs-elevated) 70%, transparent);
+  --vd-line: color-mix(in srgb, var(--qs-fg) 14%, transparent);
+  --vd-hover: color-mix(in srgb, var(--qs-accent) 12%, transparent);
+  --vd-active: color-mix(in srgb, var(--qs-accent) 20%, transparent);
+
+  /* Typography: same family as the bar, Rofi and the terminal. */
+  --font-primary: "JetBrainsMonoNL Nerd Font", "JetBrainsMono Nerd Font", monospace;
+  --font-display: var(--font-primary);
+  --font-headline: var(--font-primary);
+  --font-code: var(--font-primary);
+  --font-size: 14px;
+
+  /* Square corners everywhere. */
+  --radius-xxs: 0px;
+  --radius-xs: 0px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --custom-button-border-radius: 0px;
+  --custom-guild-icon-border-radius: 0px;
+
+  /* Backgrounds. */
+  --background-base-lowest: var(--vd-bg);
+  --background-base-lower: var(--vd-bg);
+  --background-base-low: var(--vd-surface);
+  --background-surface-high: var(--vd-elevated);
+  --background-surface-higher: var(--vd-elevated);
+  --background-surface-highest: var(--vd-elevated);
+  --chat-background-default: transparent;
+  --background-primary: transparent;
+  --background-secondary: var(--vd-surface);
+  --background-secondary-alt: var(--vd-surface);
+  --background-tertiary: var(--vd-bg);
+  --background-floating: var(--qs-elevated);
+  --background-accent: var(--vd-elevated);
+  --background-mentioned: var(--vd-active);
+  --background-mentioned-hover: var(--vd-active);
+  --background-message-hover: var(--vd-hover);
+  --background-modifier-hover: var(--vd-hover);
+  --background-modifier-selected: var(--vd-active);
+  --background-modifier-active: var(--vd-active);
+  --background-modifier-accent: var(--vd-line);
+  --bg-overlay-1: var(--vd-bg);
+  --bg-overlay-2: var(--vd-surface);
+  --bg-overlay-3: var(--vd-surface);
+  --bg-overlay-chat: transparent;
+  --bg-overlay-app-frame: var(--vd-bg);
+  --input-background: var(--vd-surface);
+  --scrollbar-thin-thumb: var(--qs-muted);
+  --scrollbar-thin-track: transparent;
+  --scrollbar-auto-thumb: var(--qs-muted);
+  --scrollbar-auto-track: transparent;
+
+  /* Text. */
+  --text-default: var(--qs-fg);
+  --text-normal: var(--qs-fg);
+  --text-strong: var(--qs-fg);
+  --text-muted: var(--qs-muted);
+  --text-subtle: var(--qs-muted);
+  --text-secondary: var(--qs-muted);
+  --header-primary: var(--qs-fg);
+  --header-secondary: var(--qs-muted);
+  --channels-default: var(--qs-muted);
+  --interactive-normal: var(--qs-muted);
+  --interactive-hover: var(--qs-fg);
+  --interactive-active: var(--qs-accent);
+  --interactive-muted: color-mix(in srgb, var(--qs-fg) 35%, transparent);
+  --text-link: var(--qs-accent);
+  --text-brand: var(--qs-accent);
+  --text-danger: var(--qs-error);
+  --mention-foreground: var(--qs-accent);
+  --mention-background: var(--vd-active);
+
+  /* Accent: collapse Discord's blurple scale onto the wallpaper accent. */
+  --brand-experiment: var(--qs-accent);
+  --brand-experiment-05a: var(--vd-hover);
+  --brand-experiment-10a: var(--vd-hover);
+  --brand-experiment-15a: var(--vd-active);
+  --brand-experiment-20a: var(--vd-active);
+  --brand-300: var(--qs-accent);
+  --brand-360: var(--qs-accent);
+  --brand-400: var(--qs-accent);
+  --brand-500: var(--qs-accent);
+  --brand-530: var(--qs-accent);
+  --brand-560: var(--qs-accent);
+  --brand-600: color-mix(in srgb, var(--qs-accent) 85%, var(--qs-bg));
+  --brand-630: color-mix(in srgb, var(--qs-accent) 75%, var(--qs-bg));
+  --brand-660: color-mix(in srgb, var(--qs-accent) 65%, var(--qs-bg));
+  --brand-700: color-mix(in srgb, var(--qs-accent) 55%, var(--qs-bg));
+  --button-filled-brand-background: var(--qs-accent);
+  --button-filled-brand-background-hover: color-mix(in srgb, var(--qs-accent) 85%, var(--qs-fg));
+  --button-filled-brand-background-active: color-mix(in srgb, var(--qs-accent) 85%, var(--qs-bg));
+  --button-filled-brand-text: var(--qs-on-accent);
+  --focus-primary: var(--qs-accent);
+  --border-focus: var(--qs-accent);
+}
+
+/* Fully transparent window shells; the layers above provide the tint. */
+html,
+body,
+#app-mount,
+[class*="appAsidePanelWrapper_"],
+[class*="app_"],
+[class*="bg_"],
+[class*="layers_"],
+[class*="base_"],
+[class*="content_"],
+[class*="sidebar_"],
+[class*="chat_"] {
+  background: transparent !important;
+}
+
+body,
+button,
+input,
+textarea,
+select {
+  font-family: var(--font-primary) !important;
+  letter-spacing: 0 !important;
+}
+
+/* No rounding, no shadows, thin 1px lines instead of cards. */
+*,
+*::before,
+*::after {
+  border-radius: 0 !important;
+}
+
+[class*="floating_"],
+[class*="layer_"] [class*="menu_"],
+[class*="popout_"],
+[class*="modal_"],
+[class*="tooltip_"],
+[class*="embedWrapper_"] {
+  box-shadow: none !important;
+  border: 1px solid var(--vd-line) !important;
+}
+
+[class*="sidebar_"],
+[class*="membersWrap_"],
+[class*="privateChannels_"] {
+  border-right: 1px solid var(--vd-line) !important;
+}
+
+[class*="title_"][class*="container_"],
+[class*="searchBar_"] {
+  border-bottom: 1px solid var(--vd-line) !important;
+  box-shadow: none !important;
+}
+
+/* Message input: a single terminal-style prompt line. */
+[class*="channelTextArea_"] {
+  background: var(--vd-surface) !important;
+  border: 1px solid var(--vd-line) !important;
+}
+[class*="channelTextArea_"]:focus-within {
+  border-color: var(--qs-accent) !important;
+}
+
+/* Selected and hovered rows use a left accent bar instead of a filled pill. */
+[class*="modeSelected_"],
+[class*="selected_"][class*="container_"] {
+  box-shadow: inset 2px 0 0 var(--qs-accent) !important;
+}
+
+/* Scrollbars: thin, flat. */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--qs-muted) !important;
+  border: 0 !important;
+}
+::-webkit-scrollbar-track {
+  background: transparent !important;
+  border: 0 !important;
+}
+
+/* Code blocks match the terminal. */
+code,
+pre,
+.hljs {
+  background: var(--vd-surface) !important;
+  border: 1px solid var(--vd-line) !important;
+  font-family: var(--font-code) !important;
+}
+
+/* Keep media fully opaque. */
+video,
+canvas,
+[class*="videoWrapper"],
+[class*="videoCover"],
+[class*="streamPreview"],
+[class*="mediaContainer"] {
+  opacity: 1 !important;
+}

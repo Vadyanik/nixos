@@ -210,6 +210,7 @@ in
     claude-desktop
     claude-code
     qbittorrent
+    nvd
     # vnix:end
   ];
 }

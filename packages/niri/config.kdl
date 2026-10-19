@@ -76,6 +76,13 @@ window-rule {
     draw-border-with-background false
     background-effect { blur true; }
 }
+// Translucent application windows; everything else keeps full opacity.
+window-rule {
+    match app-id=r#"^com\.anthropic\.Claude$"#
+    match app-id="^discord$"
+    opacity 0.85
+    background-effect { blur true; }
+}
 layer-rule {
     match namespace="^parallax-wallpaper$"
     match namespace="^awww-daemon$"

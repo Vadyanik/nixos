@@ -14,15 +14,26 @@ SURFACES = {
     'windowBg': (.10, 0xb8), 'dialogsBg': None, 'historyComposeAreaBg': (.10, 0xb8),
     'historyPinnedBg': (.14, 0xc8), 'historyUnreadBarBg': (.14, 0xc8), 'searchedBarBg': (.14, 0xc8),
     'emojiPanHeaderBg': (.14, 0xe0), 'historyToDownBg': (.14, 0xd8),
-    'windowBgOver': (.14, 0xc8), 'dialogsBgOver': (.14, 0xc8), 'windowBgRipple': (.20, 0xc8),
-    'dialogsRippleBg': (.20, 0xc8), 'lightButtonBg': (.10, 0xb8), 'lightButtonBgOver': (.14, 0xc8),
-    'lightButtonBgRipple': (.20, 0xc8), 'filterInputInactiveBg': (.14, 0xc8),
+    
+    'lightButtonBg': (.10, 0xb8),
+    'filterInputInactiveBg': (.14, 0xc8),
     'titleBg': (.10, 0xb8), 'titleBgActive': (.14, 0xc8),
     'boxBg': (.10, 0xf0), 'boxSearchBg': (.10, 0xf0), 'menuBg': (.10, 0xf0),
-    'menuBgRipple': (.20, 0xf0), 'tooltipBg': (.14, 0xf0), 'msgInBg': (.14, 0xe8),
+    'tooltipBg': (.14, 0xf0), 'msgInBg': (.14, 0xe8),
 }
+# key -> (palette color, alpha): same translucency recipe as the Quickshell Theme.qml (separator .25, hover .10, muted .65).
+TRANSLUCENT = {
+    **dict.fromkeys(('windowSubTextFg', 'windowSubTextFgOver', 'dialogsTextFg', 'dialogsDateFg', 'menuIconFg'), ('foreground', 0xa6)),
+    **dict.fromkeys(('menuSeparatorFg', 'inputBorderFg', 'filterInputBorderFg', 'tooltipBorderFg', 'historyUnreadBarBorder'), ('primary', 0x40)),
+    **dict.fromkeys(('windowBgOver', 'dialogsBgOver', 'lightButtonBgOver'), ('primary', 0x1a)),
+    **dict.fromkeys(('windowBgRipple', 'dialogsRippleBg', 'lightButtonBgRipple', 'menuBgRipple'), ('primary', 0x26)),
+    'dialogsBgActive': ('primary', 0x33), 'dialogsUnreadBgMuted': ('foreground', 0x40),
+}
+# Terminal-like look: no drop shadows.
+NO_SHADOW = ('shadowFg', 'titleShadow', 'msgInShadow', 'msgInShadowSelected', 'msgOutShadow', 'msgOutShadowSelected', 'historyToDownShadow')
 ACCENT = {'windowBgActive': 'primary', 'activeButtonBg': 'primary', 'windowActiveTextFg': 'primary',
-          'activeLineFg': 'primary', 'windowFgActive': 'on-primary', 'activeButtonFg': 'on-primary',
+          'activeLineFg': 'primary', 'dialogsUnreadBg': 'primary', 'dialogsTextFgService': 'primary',
+          'msgInServiceFg': 'primary', 'msgOutServiceFg': 'primary', 'dialogsUnreadFg': 'on-primary', 'activeButtonFg': 'on-primary',
           'windowFg': 'foreground', 'windowBoldFg': 'foreground'}
 
 
@@ -47,6 +58,11 @@ def build_palette(colors, base):
         key = m.group(1) if m else None
         if key in ACCENT:
             line = f'{key}: {colors[ACCENT[key]]};'
+        elif key in TRANSLUCENT:
+            name, alpha = TRANSLUCENT[key]
+            line = f'{key}: {colors[name]}{alpha:02x};'
+        elif key in NO_SHADOW:
+            line = f'{key}: #00000000;'
         elif key in SURFACES and SURFACES[key]:
             level, alpha = SURFACES[key]
             line = f'{key}: #{tint(colors["primary"], level)}{alpha:02x};'

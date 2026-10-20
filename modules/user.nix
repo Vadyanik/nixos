@@ -61,7 +61,7 @@ in
     shellAliases = {
       cd = "z";
       c = "clear";
-      cx = "codex";
+      cc = "claude";
       ff = "fastfetch";
       oc = "opencode";
       g = "git";
@@ -78,6 +78,8 @@ in
       mkdir = "mkdir -p";
       v = "nvim";
       sh = "niri-session";
+      niri = "niri-session";
+      n = "niri-session";
     };
 
     interactiveShellInit = ''

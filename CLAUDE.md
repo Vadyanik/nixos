@@ -18,7 +18,7 @@ vnix rebuild             # sudo nixos-rebuild switch --flake /etc/nixos#nixos, t
 vnix drift | stats | generations list
 ```
 
-Anything beyond plain package attributes (modules, services, overrides) is edited by hand in the Nix files, then `vnix rebuild` (`vnix plan` is optional and mostly unnecessary). Caution: `vnix rebuild` is configured to `git add .`, commit (via `aic -p`), and **force-push `main`** to `origin`, and runs a profile-stats hook. The user has given standing permission: Claude may run `vnix rebuild` at any time without asking first (including its commit and force-push of `main`).
+Anything beyond plain package attributes (modules, services, overrides) is edited by hand in the Nix files, then `vnix rebuild` (`vnix plan` is optional and mostly unnecessary). Caution: `vnix rebuild` is configured to `git add .`, commit (via `aic -p`), and **force-push the current branch** to `origin` (`git_push_branch` is empty, so it follows whatever branch is checked out), and runs a profile-stats hook. The user has given standing permission: Claude may run `vnix rebuild` at any time without asking first (including its commit and force-push of the current branch). Never force-push `main` by hand; merge into it normally.
 
 ## Manual validation
 
@@ -43,6 +43,13 @@ There is no CI or lint step. The only tests are the legacy `legacy/space-wallpap
 - Hyprland stays installed alongside Niri; don't launch a second compositor to validate config while one is running on the seat.
 - Wallpapers: `parallax-wallpaper` draws two-layer parallax art (Quickshell, mouse-driven) from `packages/parallax-wallpaper/assets/<id>/`; switch with `parallax-wallpaper set <id>` (also installs that wallpaper's palette into `colors.css`). The old NASA rotation lives in `legacy/` and is not imported.
 - Flake inputs of note: `claude-desktop` (overlay), `codex-desktop-linux` (NixOS module), `spicetify-nix`, `awww` (wallpaper daemon).
+
+## Branch workflow
+
+- Anything bigger than installing a single package (a new feature, module, theme, or multi-file change) is developed on its own branch `feat/<name>` (or `fix/<name>`), created from `main` before the first edit. Small changes stay on `main`.
+- `vnix rebuild` on the branch builds and pushes that branch; `main` is untouched until the merge.
+- When the user is happy, merge with `git merge --no-ff feat/<name>` into `main` (plain push, no force), then delete the branch. Ask before merging unless told to.
+- To undo, use `git reset` to the wanted commit (or drop the unmerged branch), never a new "revert" commit, unless the user asks for one.
 
 ## Conventions
 

@@ -1,0 +1,35 @@
+{
+  "managed_packages_file": "hosts/default/packages.nix",
+  "rebuild_command": "sudo -n /run/current-system/sw/bin/nixos-rebuild switch --flake /etc/nixos#nixos",
+  "nixpkgs_branch": "nixos-unstable",
+  "git_add": true,
+  "git_add_all": true,
+  "git_add_before_rebuild": true,
+  "git_commit": true,
+  "git_push": true,
+  "git_push_remote": "origin",
+  "git_push_branch": "",
+  "git_push_force": true,
+  "git_ssh_command": "ssh -i /home/vadyanik/.ssh/id_ed25519 -o IdentitiesOnly=yes",
+  "git_user_name": "",
+  "git_user_email": "",
+  "skip_unchanged": false,
+  "rebuild_backup": true,
+  "record_stats": true,
+  "ai_diagnosis": true,
+  "ai_commit_message": true,
+  "commit_message_command": "/home/vadyanik/.local/bin/aic -p",
+  "commit_message_prefix": "rebuild",
+  "security_scan_command": "",
+  "hooks_enabled": true,
+  "hooks_continue_on_error": true,
+  "hooks": {
+    "before_rebuild": [],
+    "after_rebuild": [
+      "bash /home/vadyanik/VNix/scripts/update-profile-stats.sh /etc/nixos/.vnix/profile.env"
+    ],
+    "before_commit": [],
+    "after_commit": [],
+    "after_push": []
+  }
+}

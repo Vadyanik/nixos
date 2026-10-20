@@ -11,6 +11,7 @@
     ../../modules/niri-desktop.nix
     ../../modules/librewolf-theme.nix
     ../../modules/vesktop-theme.nix
+    ../../modules/ayugram-theme.nix
     ../../modules/poltertype.nix
     ../../modules/user.nix
   ];

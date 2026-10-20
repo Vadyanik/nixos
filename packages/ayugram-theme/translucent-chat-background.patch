@@ -1,0 +1,22 @@
+--- a/Telegram/SourceFiles/window/section_widget.cpp	2026-10-20 08:51:45.735719738 +0300
++++ b/Telegram/SourceFiles/window/section_widget.cpp	2026-10-20 08:51:45.754440086 +0300
+@@ -35,6 +35,7 @@
+ #include "window/window_session_controller.h"
+ #include "window/themes/window_theme.h"
+ 
++#include "styles/palette.h"
+ #include "styles/style_polls.h"
+ 
+ #include <rpl/range.h>
+@@ -398,7 +399,10 @@
+ 		bool paused) {
+ 	const auto &background = theme->background();
+ 	if (background.colorForFill) {
+-		p.fillRect(clip, *background.colorForFill);
++		// Translucent themes: let a solid chat background follow windowBg alpha.
++		auto color = *background.colorForFill;
++		color.setAlpha(st::windowBg->c.alpha());
++		p.fillRect(clip, color);
+ 		return;
+ 	}
+ 	const auto &gradient = background.gradientForFill;

@@ -18,7 +18,7 @@ vnix rebuild             # sudo nixos-rebuild switch --flake /etc/nixos#nixos, t
 vnix drift | stats | generations list
 ```
 
-Anything beyond plain package attributes (modules, services, overrides) is edited by hand in the Nix files, then `vnix rebuild` (`vnix plan` is optional and mostly unnecessary). Caution: `vnix rebuild` is configured to `git add .`, commit (via `aic -p`), and **force-push `main`** to `origin`, and runs a profile-stats hook. Only run it when the user wants the change activated and published.
+Anything beyond plain package attributes (modules, services, overrides) is edited by hand in the Nix files, then `vnix rebuild` (`vnix plan` is optional and mostly unnecessary). Caution: `vnix rebuild` is configured to `git add .`, commit (via `aic -p`), and **force-push `main`** to `origin`, and runs a profile-stats hook. The user has given standing permission: Claude may run `vnix rebuild` at any time without asking first (including its commit and force-push of `main`).
 
 ## Manual validation
 

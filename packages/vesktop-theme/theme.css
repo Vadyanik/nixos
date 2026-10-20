@@ -33,6 +33,10 @@
   --radius-xl: 0px;
   --custom-button-border-radius: 0px;
   --custom-guild-icon-border-radius: 0px;
+  --radius-round: 0px;
+  --radius-full: 0px;
+  --radius-pill: 0px;
+  --radius-circle: 0px;
 
   /* Backgrounds. */
   --background-base-lowest: var(--vd-bg);
@@ -135,14 +139,34 @@ select {
 }
 
 /* No rounding, no shadows, thin 1px lines instead of cards. */
-*,
-*::before,
-*::after {
+/* Doubled :not(#_) lifts specificity above Discord's own !important radius rules. */
+*:not(#_):not(#_),
+*:not(#_):not(#_)::before,
+*:not(#_):not(#_)::after,
+*:not(#_):not(#_)::placeholder,
+*:not(#_):not(#_)::-webkit-scrollbar-thumb,
+*:not(#_):not(#_)::-webkit-scrollbar-track {
   border-radius: 0 !important;
   border-start-start-radius: 0 !important;
   border-start-end-radius: 0 !important;
   border-end-start-radius: 0 !important;
   border-end-end-radius: 0 !important;
+}
+
+/* Avatars, server icons and status dots are clipped by SVG masks, clip-path or rx, not border-radius. */
+foreignObject,
+[mask],
+[class*="avatar"],
+[class*="icon_"],
+[class*="wrapper_"] {
+  mask: none !important;
+  -webkit-mask: none !important;
+  clip-path: none !important;
+}
+rect,
+[class*="avatar"] rect {
+  rx: 0 !important;
+  ry: 0 !important;
 }
 
 [class*="floating_"],

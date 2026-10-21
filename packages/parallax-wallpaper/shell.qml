@@ -60,7 +60,6 @@ ShellRoot {
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Background
             WlrLayershell.namespace: "parallax-wallpaper"
-            mask: Region {}
             color: "#000000"
 
             // Layers are square sources covered over the screen, then enlarged by
@@ -97,10 +96,21 @@ ShellRoot {
                     source: "file://" + root.share + "assets/" + root.activeId + "/front.png"
                     amplitude: root.active.front
                 }
+                // The compositor only reports the real cursor while it is over the
+                // wallpaper, which is also the only place the cat is visible.
+                MouseArea {
+                    id: cursor
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    acceptedButtons: Qt.NoButton
+                    property real lastX: window.width / 2
+                    property real lastY: window.height / 2
+                    onPositionChanged: mouse => { lastX = mouse.x; lastY = mouse.y; }
+                }
                 Neko {
                     sprite: "file://" + root.share + "assets/oneko.gif"
-                    targetX: (root.pointer.x + 1) / 2 * window.width
-                    targetY: (root.pointer.y + 1) / 2 * window.height
+                    targetX: cursor.lastX
+                    targetY: cursor.lastY
                 }
             }
         }

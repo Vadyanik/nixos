@@ -70,17 +70,36 @@ Item {
     // entries sit flush. A real Space press adds a space. A combination (two or
     // more keys pressed together) is one entry with a gap on both sides. Shift on
     // a character only changes it (n -> N), so that stays a single key.
+    // Repeats fold into "×N": combinations and special keys from the second press,
+    // plain characters from the third, so double letters in words stay as typed.
     function push(chord) {
         const pieces = parts(chord);
         if (!pieces.length || (pieces.length === 1 && chord.key === "" && chord.mods[0] === "shift")) return;  // lone Shift tap
         const space = chord.mods.length === 0 && chord.key === "space";
-        entryModel.insert(0, {parts: space ? " " : pieces.join(separator), combo: pieces.length > 1, born: Date.now()});
-        if (entryModel.count > maxEntries) entryModel.remove(maxEntries, entryModel.count - maxEntries);
-        now = Date.now();
+        const text = space ? " " : pieces.join(separator);
+        const combo = pieces.length > 1;
+        const character = !combo && (space || chord.key.length === 1);
+        const time = Date.now();
+        const same = i => i < entryModel.count && entryModel.get(i).parts === text && entryModel.get(i).combo === combo;
+        if (same(0) && (!character || entryModel.get(0).count >= 3)) {
+            entryModel.setProperty(0, "count", entryModel.get(0).count + 1);
+            entryModel.setProperty(0, "born", time);
+        } else if (character && same(0) && same(1) && entryModel.get(0).count === 1 && entryModel.get(1).count === 1) {
+            entryModel.remove(0);  // third in a row: fold the two plain ones into "×3"
+            entryModel.setProperty(0, "count", 3);
+            entryModel.setProperty(0, "born", time);
+        } else {
+            entryModel.insert(0, {parts: text, combo: combo, count: 1, born: time});
+            if (entryModel.count > maxEntries) entryModel.remove(maxEntries, entryModel.count - maxEntries);
+        }
+        now = time;
     }
     function snapshot() {
         return Array.from({length: entryModel.count}, (_, i) => entryModel.get(i)).reverse()
-            .map(e => e.combo ? " " + e.parts.split(separator).join("+") + " " : e.parts).join("");
+            .map(e => {
+                const text = e.parts.split(separator).join("+") + (e.count > 1 ? "×" + e.count : "");
+                return e.combo || e.count > 1 ? " " + text + " " : text;
+            }).join("");
     }
     function handle(line) {
         let event;

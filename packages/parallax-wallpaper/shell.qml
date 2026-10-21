@@ -69,6 +69,11 @@ ShellRoot {
             property real cursorGain: 1.0
             property real cursorX: width / 2
             property real cursorY: height / 2
+            // The cat lives in a world of stacked workspaces; the camera shows the active one.
+            readonly property var space: (root.pointer.ws || ({}))[window.screen.name] || ({ active: 1, count: 1 })
+            readonly property real cameraY: (space.active - 1) * height
+            property real smoothCameraY: cameraY
+            Behavior on smoothCameraY { NumberAnimation { duration: 280; easing.type: Easing.InOutCubic } }
             property real lastRawX: NaN
             property real lastRawY: NaN
             Connections {
@@ -128,7 +133,9 @@ ShellRoot {
                 Neko {
                     sprite: "file://" + root.share + "assets/oneko.gif"
                     targetX: window.cursorX
-                    targetY: window.cursorY
+                    targetY: window.cameraY + window.cursorY
+                    worldHeight: window.space.count * window.height
+                    cameraY: window.smoothCameraY
                 }
             }
         }

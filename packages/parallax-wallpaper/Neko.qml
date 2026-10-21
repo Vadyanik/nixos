@@ -7,6 +7,9 @@ Item {
     property url sprite
     property real targetX: 0
     property real targetY: 0
+    // Vertical extent of the cat's world: all workspaces of the output stacked.
+    property real worldHeight: parent.height
+    property real cameraY: 0
     property real cell: 64
     property real speed: 10 * cell / 32
     property real posX: cell
@@ -31,8 +34,12 @@ Item {
 
     width: cell
     height: cell
+    Component.onCompleted: {
+        posX = targetX;
+        posY = targetY;
+    }
     x: posX - cell / 2
-    y: posY - cell / 2
+    y: posY - cell / 2 - cameraY
 
     Item {
         anchors.fill: parent
@@ -64,7 +71,7 @@ Item {
             if (posX < cell) options.push("scratchWallW");
             if (posY < cell) options.push("scratchWallN");
             if (posX > parent.width - cell) options.push("scratchWallE");
-            if (posY > parent.height - cell) options.push("scratchWallS");
+            if (posY > worldHeight - cell) options.push("scratchWallS");
             idleAnimation = options[Math.floor(Math.random() * options.length)];
         }
         if (idleAnimation === "") {
@@ -101,7 +108,7 @@ Item {
         dir += (dx / distance > 0.5 ? "W" : "") + (dx / distance < -0.5 ? "E" : "");
         setSprite(dir, frameCount);
         posX = Math.min(Math.max(cell / 2, posX - dx / distance * speed), parent.width - cell / 2);
-        posY = Math.min(Math.max(cell / 2, posY - dy / distance * speed), parent.height - cell / 2);
+        posY = Math.min(Math.max(cell / 2, posY - dy / distance * speed), worldHeight - cell / 2);
     }
 
     Timer {

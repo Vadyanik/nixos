@@ -8,7 +8,6 @@ ShellRoot {
     readonly property string share: "@share@"
     property var pointer: ({ x: 0, y: 0 })
     property string wallpaperId: ""
-    property string cursorDebug: "none"
     readonly property var catalog: {
         try { return JSON.parse(catalogFile.text()); }
         catch (error) { return { default: "00004", wallpapers: {} }; }
@@ -61,7 +60,30 @@ ShellRoot {
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Background
             WlrLayershell.namespace: "parallax-wallpaper"
+            mask: Region {}
             color: "#000000"
+
+            // Wayland hides the real cursor from background clients, so integrate
+            // the raw mouse deltas into a screen position instead. Niri applies
+            // pointer acceleration we cannot see; cursorGain is the tuning knob.
+            property real cursorGain: 1.0
+            property real cursorX: width / 2
+            property real cursorY: height / 2
+            property real lastRawX: NaN
+            property real lastRawY: NaN
+            Connections {
+                target: root
+                function onPointerChanged() {
+                    const p = root.pointer;
+                    if (p.rx === undefined) return;
+                    if (!isNaN(window.lastRawX)) {
+                        window.cursorX = Math.min(Math.max(0, window.cursorX + (p.rx - window.lastRawX) * window.cursorGain), window.width);
+                        window.cursorY = Math.min(Math.max(0, window.cursorY + (p.ry - window.lastRawY) * window.cursorGain), window.height);
+                    }
+                    window.lastRawX = p.rx;
+                    window.lastRawY = p.ry;
+                }
+            }
 
             // Layers are square sources covered over the screen, then enlarged by
             // their own travel so a full pointer sweep never exposes an edge.
@@ -97,22 +119,10 @@ ShellRoot {
                     source: "file://" + root.share + "assets/" + root.activeId + "/front.png"
                     amplitude: root.active.front
                 }
-                // The compositor only reports the real cursor while it is over the
-                // wallpaper, which is also the only place the cat is visible.
-                MouseArea {
-                    id: cursor
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    acceptedButtons: Qt.NoButton
-                    property real lastX: window.width / 2
-                    property real lastY: window.height / 2
-                    property int moves: 0
-                    onPositionChanged: mouse => { lastX = mouse.x; lastY = mouse.y; moves++; root.cursorDebug = window.width + "x" + window.height + " " + lastX + "," + lastY + " n=" + moves; }
-                }
                 Neko {
                     sprite: "file://" + root.share + "assets/oneko.gif"
-                    targetX: cursor.lastX
-                    targetY: cursor.lastY
+                    targetX: window.cursorX
+                    targetY: window.cursorY
                 }
             }
         }
@@ -121,7 +131,7 @@ ShellRoot {
     IpcHandler {
         target: "parallax"
         function status(): string {
-            return JSON.stringify({ cursor: root.cursorDebug, wallpaper: root.activeId, x: root.pointer.x, y: root.pointer.y });
+            return JSON.stringify({ wallpaper: root.activeId, x: root.pointer.x, y: root.pointer.y });
         }
     }
 }

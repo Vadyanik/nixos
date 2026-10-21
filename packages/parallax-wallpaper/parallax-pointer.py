@@ -31,6 +31,7 @@ def scan(devices):
 def main():
     devices = {}
     x = y = 0.0
+    raw_x = raw_y = 0
     next_scan = last_sent = 0.0
     dirty = True
     while True:
@@ -58,12 +59,14 @@ def main():
                 devices.pop(device.path, None)
                 device.close()
         if dx or dy:
+            raw_x += dx
+            raw_y += dy
             x = max(-1.0, min(1.0, x + dx / 1400))
             y = max(-1.0, min(1.0, y + dy / 900))
             dirty = True
         now = time.monotonic()
         if dirty and now - last_sent >= 1 / 60:
-            print(json.dumps({'x': x, 'y': y}), flush=True)
+            print(json.dumps({'x': x, 'y': y, 'rx': raw_x, 'ry': raw_y}), flush=True)
             dirty = False
             last_sent = now
 

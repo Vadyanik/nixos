@@ -76,7 +76,13 @@ ShellRoot {
                 function onPointerChanged() {
                     const p = root.pointer;
                     if (p.rx === undefined) return;
-                    if (!isNaN(window.lastRawX)) {
+                    if (p.out !== undefined) {
+                        // Real cursor position from the patched Niri.
+                        if (p.out === window.screen.name) {
+                            window.cursorX = p.px;
+                            window.cursorY = p.py;
+                        }
+                    } else if (!isNaN(window.lastRawX)) {
                         window.cursorX = Math.min(Math.max(0, window.cursorX + (p.rx - window.lastRawX) * window.cursorGain), window.width);
                         window.cursorY = Math.min(Math.max(0, window.cursorY + (p.ry - window.lastRawY) * window.cursorGain), window.height);
                     }

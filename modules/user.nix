@@ -74,7 +74,7 @@ in
       ll = "eza -l --icons --git";
       ls = "eza --icons --group-directories-first";
       lt = "eza --tree --icons --level=3";
-      gtree = "serie";
+      gt = "serie";
       mkdir = "mkdir -p";
       v = "nvim";
       sh = "niri-session";

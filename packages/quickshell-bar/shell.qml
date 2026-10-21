@@ -351,92 +351,6 @@ ShellRoot {
                             leftAction: () => root.run("xdg-open https://alerts.in.ua/")
                             rightAction: () => alert.refresh()
                         }
-                        // Live key echo: the held chord first, then entries newest to oldest.
-                        // Keys pressed together sit close; separate presses are a space apart.
-                        // It fills the bar up to the clock; entries that do not fit fade out whole.
-                        Item {
-                            id: keystrokesBox
-                            visible: keystrokes.opened
-                            height: 32
-                            width: Math.max(0, panelContent.width / 2 - Math.max(clockLabel.width, volumeLabel.width) / 2 - 16 - leftRow.anchors.leftMargin - x)
-                            readonly property bool holding: keystrokes.current.secret || keystrokes.current.mods.length > 0 || keystrokes.current.key !== ""
-                            Row {
-                                id: heldRow
-                                height: 32
-                                spacing: 6
-                                // The live chord slides in when a new press starts.
-                                property real appear: 1
-                                x: (appear - 1) * 28
-                                opacity: appear
-                                NumberAnimation on appear { id: heldAppear; running: false; from: 0; to: 1; duration: 240; easing.type: Easing.OutCubic }
-                                Connections { target: keystrokesBox; function onHoldingChanged() { if (keystrokesBox.holding) heldAppear.restart(); } }
-                                Repeater {
-                                    model: keystrokes.current.secret ? ["󰌾"] : (keystrokesBox.holding ? keystrokes.parts(keystrokes.current) : [])
-                                    Text {
-                                        required property string modelData
-                                        height: 32
-                                        verticalAlignment: Text.AlignVCenter
-                                        text: modelData
-                                        color: keystrokes.current.secret ? root.palette.mutedForeground : root.palette.accent
-                                        font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18; bold: true }
-                                    }
-                                }
-                            }
-                            ListView {
-                                id: keystrokesList
-                                anchors { left: heldRow.right; leftMargin: heldRow.width > 0 ? 14 : 0; top: parent.top; bottom: parent.bottom }
-                                width: Math.max(0, keystrokesBox.width - heldRow.width - anchors.leftMargin)
-                                orientation: ListView.Horizontal
-                                spacing: 14
-                                clip: true
-                                interactive: false
-                                model: keystrokes.entries
-                                displaced: Transition { NumberAnimation { property: "x"; duration: 220; easing.type: Easing.OutCubic } }
-                                remove: Transition { NumberAnimation { property: "opacity"; to: 0; duration: 400 } }
-                                delegate: Item {
-                                    id: entry
-                                    required property string parts
-                                    required property int count
-                                    required property int index
-                                    required property real born
-                                    readonly property real fade: Math.max(0, Math.min(1, 1 - (keystrokes.now - born - keystrokes.fadeDelay) / (keystrokes.lifetime - keystrokes.fadeDelay)))
-                                    property real fit: x + width <= keystrokesList.width ? 1 : 0
-                                    Behavior on fit { NumberAnimation { duration: 200 } }
-                                    width: entryRow.width
-                                    height: 32
-                                    Row {
-                                        id: entryRow
-                                        height: 32
-                                        spacing: 6
-                                        // Slide in from the left on creation; entry.appear runs 0 -> 1.
-                                        property real appear: 0
-                                        x: (appear - 1) * 28
-                                        opacity: appear * entry.fit * entry.fade
-                                        Component.onCompleted: appearAnimation.start()
-                                        NumberAnimation on appear { id: appearAnimation; running: false; to: 1; duration: 240; easing.type: Easing.OutCubic }
-                                        Repeater {
-                                            model: entry.parts.split(keystrokes.separator)
-                                            Text {
-                                                required property string modelData
-                                                height: 32
-                                                verticalAlignment: Text.AlignVCenter
-                                                text: modelData
-                                                color: root.palette.foreground
-                                                font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18 }
-                                            }
-                                        }
-                                        Text {
-                                            visible: entry.count > 1
-                                            height: 32
-                                            verticalAlignment: Text.AlignVCenter
-                                            text: "×" + entry.count
-                                            color: root.palette.mutedForeground
-                                            font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18 }
-                                        }
-                                    }
-                                }
-                            }
-                        }
                     }
                     Text {
                         id: clockLabel
@@ -454,9 +368,98 @@ ShellRoot {
                         color: root.palette.accent
                         font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18; bold: true }
                     }
+                    // Live key echo at the right end of the bar: entries oldest to newest
+                    // left to right, the held chord last. Keys pressed together sit close;
+                    // separate presses are a space apart. It grows left up to the clock and
+                    // entries that no longer fit fade out whole.
+                    Item {
+                        id: keystrokesBox
+                        visible: keystrokes.opened
+                        anchors { right: parent.right; rightMargin: 12 }
+                        height: 32
+                        width: Math.max(0, panelContent.width / 2 - Math.max(clockLabel.width, volumeLabel.width) / 2 - 16 - anchors.rightMargin - rightRow.width - rightRow.anchors.rightMargin)
+                        readonly property bool holding: keystrokes.current.secret || keystrokes.current.mods.length > 0 || keystrokes.current.key !== ""
+                        Row {
+                            id: heldRow
+                            anchors.right: parent.right
+                            height: 32
+                            spacing: 6
+                            // The live chord slides in from the right when a new press starts.
+                            property real appear: 1
+                            transform: Translate { x: (1 - heldRow.appear) * 28 }
+                            opacity: appear
+                            NumberAnimation on appear { id: heldAppear; running: false; from: 0; to: 1; duration: 240; easing.type: Easing.OutCubic }
+                            Connections { target: keystrokesBox; function onHoldingChanged() { if (keystrokesBox.holding) heldAppear.restart(); } }
+                            Repeater {
+                                model: keystrokes.current.secret ? ["󰌾"] : (keystrokesBox.holding ? keystrokes.parts(keystrokes.current) : [])
+                                Text {
+                                    required property string modelData
+                                    height: 32
+                                    verticalAlignment: Text.AlignVCenter
+                                    text: modelData
+                                    color: keystrokes.current.secret ? root.palette.mutedForeground : root.palette.accent
+                                    font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18; bold: true }
+                                }
+                            }
+                        }
+                        ListView {
+                            id: keystrokesList
+                            anchors { left: parent.left; right: heldRow.left; rightMargin: heldRow.width > 0 ? 14 : 0; top: parent.top; bottom: parent.bottom }
+                            orientation: ListView.Horizontal
+                            layoutDirection: Qt.RightToLeft  // newest (index 0) at the right
+                            spacing: 14
+                            clip: true
+                            interactive: false
+                            model: keystrokes.entries
+                            displaced: Transition { NumberAnimation { property: "x"; duration: 220; easing.type: Easing.OutCubic } }
+                            remove: Transition { NumberAnimation { property: "opacity"; to: 0; duration: 400 } }
+                            delegate: Item {
+                                id: entry
+                                required property string parts
+                                required property int count
+                                required property int index
+                                required property real born
+                                readonly property real fade: Math.max(0, Math.min(1, 1 - (keystrokes.now - born - keystrokes.fadeDelay) / (keystrokes.lifetime - keystrokes.fadeDelay)))
+                                property real fit: x - keystrokesList.contentX >= 0 ? 1 : 0
+                                Behavior on fit { NumberAnimation { duration: 200 } }
+                                width: entryRow.width
+                                height: 32
+                                Row {
+                                    id: entryRow
+                                    height: 32
+                                    spacing: 6
+                                    // Slide in from the right on creation; appear runs 0 -> 1.
+                                    property real appear: 0
+                                    transform: Translate { x: (1 - entryRow.appear) * 28 }
+                                    opacity: appear * entry.fit * entry.fade
+                                    Component.onCompleted: appearAnimation.start()
+                                    NumberAnimation on appear { id: appearAnimation; running: false; to: 1; duration: 240; easing.type: Easing.OutCubic }
+                                    Repeater {
+                                        model: entry.parts.split(keystrokes.separator)
+                                        Text {
+                                            required property string modelData
+                                            height: 32
+                                            verticalAlignment: Text.AlignVCenter
+                                            text: modelData
+                                            color: root.palette.foreground
+                                            font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18 }
+                                        }
+                                    }
+                                    Text {
+                                        visible: entry.count > 1
+                                        height: 32
+                                        verticalAlignment: Text.AlignVCenter
+                                        text: "×" + entry.count
+                                        color: root.palette.mutedForeground
+                                        font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18 }
+                                    }
+                                }
+                            }
+                        }
+                    }
                     Row {
                         id: rightRow
-                        anchors { right: parent.right; rightMargin: 12 }
+                        anchors { right: keystrokesBox.visible ? keystrokesBox.left : parent.right; rightMargin: keystrokesBox.visible ? 14 : 12 }
                         height: 32
                         spacing: 10
                         Text {

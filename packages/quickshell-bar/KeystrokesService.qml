@@ -64,14 +64,75 @@ Item {
         if (chord.key) result.push(keyText(chord.key, absorb));
         return result;
     }
-    function push(chord) {
-        const joined = parts(chord).join(separator);
-        if (entryModel.count > 0 && entryModel.get(0).parts === joined) {
-            entryModel.setProperty(0, "count", entryModel.get(0).count + 1);
+    // Typing is grouped into words: plain characters (Shift only changes case)
+    // join the newest word entry. A word ends on Space, on any other key or
+    // hotkey, when focus moves to another window or field, on a mouse click,
+    // or after a pause. Hotkeys and special keys stay separate entries whose
+    // keys are drawn apart, and repeats of them fold into "×N".
+    readonly property int wordPause: 3000
+    property bool wordOpen: false
+    property real lastTyped: 0
+    readonly property var focusedWindowId: compositor.focusedWindow ? compositor.focusedWindow.id : null
+    onFocusedWindowIdChanged: wordOpen = false
+
+    function addEntry(pieces) {
+        const joined = pieces.join(separator);
+        const first = entryModel.count > 0 ? entryModel.get(0) : null;
+        if (first && !first.word && first.parts === joined) {
+            entryModel.setProperty(0, "count", first.count + 1);
             entryModel.setProperty(0, "born", Date.now());
         } else {
-            entryModel.insert(0, {parts: joined, count: 1, born: Date.now()});
-            if (entryModel.count > maxEntries) entryModel.remove(maxEntries, entryModel.count - maxEntries);
+            entryModel.insert(0, {parts: joined, count: 1, born: Date.now(), word: false});
+            trim();
+        }
+    }
+    function trim() {
+        if (entryModel.count > maxEntries) entryModel.remove(maxEntries, entryModel.count - maxEntries);
+    }
+    function typeCharacter(text) {
+        const time = Date.now();
+        const first = entryModel.count > 0 ? entryModel.get(0) : null;
+        if (wordOpen && first && first.word && time - lastTyped < wordPause) {
+            entryModel.setProperty(0, "parts", first.parts + text);
+            entryModel.setProperty(0, "born", time);
+        } else {
+            entryModel.insert(0, {parts: text, count: 1, born: time, word: true});
+            trim();
+        }
+        wordOpen = true;
+        lastTyped = time;
+    }
+    // Backspace inside the word being typed edits it; returns false otherwise.
+    function eraseCharacter() {
+        const first = entryModel.count > 0 ? entryModel.get(0) : null;
+        if (!wordOpen || !first || !first.word) return false;
+        const characters = Array.from(first.parts);
+        characters.pop();
+        if (characters.length) {
+            entryModel.setProperty(0, "parts", characters.join(""));
+            entryModel.setProperty(0, "born", Date.now());
+        } else {
+            entryModel.remove(0);
+            wordOpen = false;
+        }
+        lastTyped = Date.now();
+        return true;
+    }
+    function push(chord) {
+        const others = chord.mods.filter(m => m !== "shift");
+        const shift = others.length < chord.mods.length;
+        if (!chord.key) {
+            if (others.length === 0) return;  // a lone Shift tap only changes case
+            wordOpen = false;
+            addEntry(parts(chord));
+        } else if (others.length === 0 && chord.key.length === 1) {
+            typeCharacter(keyText(chord.key, shift));
+        } else if (chord.mods.length === 0 && chord.key === "space") {
+            wordOpen = false;  // the gap between entries is the space
+        } else if (chord.mods.length === 0 && chord.key === "backspace" && eraseCharacter()) {
+        } else {
+            wordOpen = false;
+            addEntry(parts(chord));
         }
         now = Date.now();
     }
@@ -83,9 +144,11 @@ Item {
         try { event = JSON.parse(line); } catch (e) { return; }
         if (event.type === "state") current = {mods: event.mods, key: event.key, secret: event.secret === true};
         else if (event.type === "chord") push(event);
+        else if (event.type === "boundary") wordOpen = false;
+        if (current.secret) wordOpen = false;
     }
 
-    onOpenedChanged: { entryModel.clear(); current = {mods: [], key: "", secret: false}; }
+    onOpenedChanged: { entryModel.clear(); wordOpen = false; current = {mods: [], key: "", secret: false}; }
 
     ListModel { id: entryModel }
     // One clock drives every entry's fade and drops the ones past their lifetime.

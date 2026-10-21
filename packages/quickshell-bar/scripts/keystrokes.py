@@ -4,6 +4,8 @@
 Events (one JSON object per line):
   {"type": "state", "mods": ["super", "shift"], "key": "a"}   live view of what is held
   {"type": "chord", "mods": ["ctrl"], "key": "c"}             a completed press for the history
+  {"type": "boundary"}                                       focus moved to another field or a
+                                                             mouse button was pressed: a new word starts
 
 Keys are physical (US layout) names; Esc and Caps Lock are swapped (xkb caps:swapescape),
 so evdev code 58 is reported as esc and code 1 as caps; the shell maps them to icons.
@@ -59,10 +61,15 @@ def key_name(code):
     return NAMES.get(code) or CHARS.get(code) or f"key{code}"
 
 
-def keyboards():
+MOUSE_BUTTONS = range(272, 277)  # BTN_LEFT .. BTN_EXTRA
+
+
+def input_devices():
+    """Keyboards, plus mice whose button presses only mark word boundaries."""
     found = {}
-    for link in glob.glob("/dev/input/by-path/*-event-kbd") + glob.glob("/dev/input/by-id/*-event-kbd"):
-        found[os.path.realpath(link)] = True
+    for kind in ("kbd", "mouse"):
+        for link in glob.glob(f"/dev/input/by-path/*-event-{kind}") + glob.glob(f"/dev/input/by-id/*-event-{kind}"):
+            found[os.path.realpath(link)] = True
     return list(found)
 
 
@@ -170,6 +177,7 @@ class PasswordFocus:
             # Remember the Niri window; the flag only counts while it stays focused,
             # so leaving for an app without accessibility does not keep it stuck.
             self.window = focused_window().get("id") if secret else None
+            emit(type="boundary")  # another field: what follows is a new word
 
         self._listener = Atspi.EventListener.new(on_focus)
         self._listener.register("object:state-changed:focused")
@@ -188,9 +196,13 @@ def secret_input():
     return bool(password_focus and password_focus.window is not None and password_focus.window == window.get("id"))
 
 
+_emit_lock = threading.Lock()
+
+
 def emit(**event):
-    sys.stdout.write(json.dumps(event) + "\n")
-    sys.stdout.flush()
+    with _emit_lock:  # the AT-SPI thread emits too
+        sys.stdout.write(json.dumps(event) + "\n")
+        sys.stdout.flush()
 
 
 def main():
@@ -217,7 +229,7 @@ def main():
         if time.monotonic() - last_scan > 3:
             last_scan = time.monotonic()
             known = set(devices.values())
-            for path in keyboards():
+            for path in input_devices():
                 if path in known:
                     continue
                 try:
@@ -240,6 +252,10 @@ def main():
             for offset in range(0, len(data) - EVENT.size + 1, EVENT.size):
                 _, _, etype, code, value = EVENT.unpack_from(data, offset)
                 if etype != EV_KEY or value == 2:
+                    continue
+                if code in MOUSE_BUTTONS:
+                    if value:
+                        emit(type="boundary")
                     continue
                 if value:  # decide on every press, before anything is reported
                     secret = secret_input()

@@ -360,15 +360,21 @@ ShellRoot {
                             Text { text: "│"; height: 32; verticalAlignment: Text.AlignVCenter; color: root.palette.separator; font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18 } }
                             Repeater {
                                 model: keystrokes.history
-                                Text {
+                                Row {
                                     required property var modelData
                                     required property int index
                                     height: 32
-                                    verticalAlignment: Text.AlignVCenter
-                                    text: modelData.text + (modelData.count > 1 ? " ×" + modelData.count : "")
-                                    color: root.palette.foreground
-                                    opacity: 0.35 + 0.5 * (index + 1) / Math.max(1, keystrokes.history.length)
-                                    font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18 }
+                                    spacing: 14
+                                    // A dot marks a new press; keys joined by "+" were held together.
+                                    Text { visible: index > 0; height: 32; verticalAlignment: Text.AlignVCenter; text: "·"; color: root.palette.separator; font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18; bold: true } }
+                                    Text {
+                                        height: 32
+                                        verticalAlignment: Text.AlignVCenter
+                                        text: modelData.text + (modelData.count > 1 ? " ×" + modelData.count : "")
+                                        color: modelData.combo ? root.palette.accent : root.palette.foreground
+                                        opacity: 0.4 + 0.6 * (index + 1) / Math.max(1, keystrokes.history.length)
+                                        font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18; bold: modelData.combo }
+                                    }
                                 }
                             }
                             Text {

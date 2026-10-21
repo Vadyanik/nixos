@@ -1,3 +1,4 @@
 .vnix/backups/
 .vnix/stats.db
 result
+__pycache__/

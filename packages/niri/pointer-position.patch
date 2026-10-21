@@ -1,0 +1,115 @@
+diff -ruN a/niri-ipc/src/lib.rs b/niri-ipc/src/lib.rs
+--- a/niri-ipc/src/lib.rs
++++ b/niri-ipc/src/lib.rs
+@@ -85,6 +85,8 @@
+     PickWindow,
+     /// Request picking a color from the screen.
+     PickColor,
++    /// Request the current pointer position.
++    PointerPosition,
+     /// Perform an action.
+     Action(Action),
+     /// Change output configuration temporarily.
+@@ -159,6 +161,8 @@
+     PickedWindow(Option<Window>),
+     /// Information about the picked color.
+     PickedColor(Option<PickedColor>),
++    /// Current pointer position, if it is over an output.
++    PointerPosition(Option<PointerPosition>),
+     /// Output configuration change result.
+     OutputConfigChanged(OutputConfigChanged),
+     /// Information about the overview.
+@@ -167,6 +171,18 @@
+     Casts(Vec<Cast>),
+ }
+ 
++/// Pointer position in logical pixels, relative to the output it is on.
++#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
++#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
++pub struct PointerPosition {
++    /// Name of the output under the pointer.
++    pub output: String,
++    /// Horizontal position within the output.
++    pub x: f64,
++    /// Vertical position within the output.
++    pub y: f64,
++}
++
+ /// Overview information.
+ #[derive(Serialize, Deserialize, Debug, Clone)]
+ #[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+diff -ruN a/src/cli.rs b/src/cli.rs
+--- a/src/cli.rs
++++ b/src/cli.rs
+@@ -79,6 +79,8 @@
+     PickWindow,
+     /// Pick a color from the screen with the mouse.
+     PickColor,
++    /// Print the pointer position within its output.
++    PointerPosition,
+     /// Perform an action.
+     Action {
+         #[command(subcommand)]
+diff -ruN a/src/ipc/client.rs b/src/ipc/client.rs
+--- a/src/ipc/client.rs
++++ b/src/ipc/client.rs
+@@ -36,6 +36,7 @@
+         Msg::FocusedOutput => Request::FocusedOutput,
+         Msg::PickWindow => Request::PickWindow,
+         Msg::PickColor => Request::PickColor,
++        Msg::PointerPosition => Request::PointerPosition,
+         Msg::Action { action } => Request::Action(action.clone()),
+         Msg::Output { output, action } => Request::Output {
+             output: output.clone(),
+@@ -297,6 +298,24 @@
+                 println!("No window selected.");
+             }
+         }
++        Msg::PointerPosition => {
++            let Response::PointerPosition(position) = response else {
++                bail!("unexpected response: expected PointerPosition, got {response:?}");
++            };
++
++            if json {
++                let position =
++                    serde_json::to_string(&position).context("error formatting response")?;
++                println!("{position}");
++                return Ok(());
++            }
++
++            if let Some(position) = position {
++                println!("Output \"{}\": {:.1}, {:.1}", position.output, position.x, position.y);
++            } else {
++                println!("The pointer is not over an output.");
++            }
++        }
+         Msg::PickColor => {
+             let Response::PickedColor(color) = response else {
+                 bail!("unexpected response: expected PickedColor, got {response:?}");
+diff -ruN a/src/ipc/server.rs b/src/ipc/server.rs
+--- a/src/ipc/server.rs
++++ b/src/ipc/server.rs
+@@ -378,6 +378,23 @@
+             let color = result.map_err(|_| String::from("error getting picked color"))?;
+             Response::PickedColor(color)
+         }
++        Request::PointerPosition => {
++            let (tx, rx) = async_channel::bounded(1);
++            ctx.event_loop.insert_idle(move |state| {
++                let pos = state.niri.seat.get_pointer().unwrap().current_location();
++                let position = state.niri.output_under(pos).map(|(output, pos_within)| {
++                    niri_ipc::PointerPosition {
++                        output: output.name(),
++                        x: pos_within.x,
++                        y: pos_within.y,
++                    }
++                });
++                let _ = tx.send_blocking(position);
++            });
++            let result = rx.recv().await;
++            let position = result.map_err(|_| String::from("error getting pointer position"))?;
++            Response::PointerPosition(position)
++        }
+         Request::Action(action) => {
+             validate_action(&action)?;
+ 

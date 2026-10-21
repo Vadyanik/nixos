@@ -2,7 +2,7 @@
 let
   niriZoom = pkgs.niri.overrideAttrs (old: assert lib.assertMsg (old.version == "26.04")
     "workspace-zoom.patch targets Niri 26.04; rebase it before upgrading Niri"; {
-  patches = (old.patches or []) ++ [ ../packages/niri/workspace-zoom.patch ];
+  patches = (old.patches or []) ++ [ ../packages/niri/workspace-zoom.patch ../packages/niri/pointer-position.patch ];
   # Skip the package's separate cargo test build; the user wants to validate desktop behavior directly.
   doCheck = false;
   env = (old.env or {}) // { NIRI_BUILD_COMMIT = "Nixpkgs-workspace-zoom"; };

@@ -63,6 +63,39 @@ ShellRoot {
             mask: Region {}
             color: "#000000"
 
+            // Wayland hides the real cursor from background clients, so integrate
+            // the raw mouse deltas into a screen position instead. Niri applies
+            // pointer acceleration we cannot see; cursorGain is the tuning knob.
+            property real cursorGain: 1.0
+            property real cursorX: width / 2
+            property real cursorY: height / 2
+            // The cat lives in a world of stacked workspaces; the camera shows the active one.
+            readonly property var space: (root.pointer.ws || ({}))[window.screen.name] || ({ active: 1, count: 1 })
+            readonly property real cameraY: (space.active - 1) * height
+            property real smoothCameraY: cameraY
+            Behavior on smoothCameraY { NumberAnimation { duration: 280; easing.type: Easing.InOutCubic } }
+            property real lastRawX: NaN
+            property real lastRawY: NaN
+            Connections {
+                target: root
+                function onPointerChanged() {
+                    const p = root.pointer;
+                    if (p.rx === undefined) return;
+                    if (p.out !== undefined) {
+                        // Real cursor position from the patched Niri.
+                        if (p.out === window.screen.name) {
+                            window.cursorX = p.px;
+                            window.cursorY = p.py;
+                        }
+                    } else if (!isNaN(window.lastRawX)) {
+                        window.cursorX = Math.min(Math.max(0, window.cursorX + (p.rx - window.lastRawX) * window.cursorGain), window.width);
+                        window.cursorY = Math.min(Math.max(0, window.cursorY + (p.ry - window.lastRawY) * window.cursorGain), window.height);
+                    }
+                    window.lastRawX = p.rx;
+                    window.lastRawY = p.ry;
+                }
+            }
+
             // Layers are square sources covered over the screen, then enlarged by
             // their own travel so a full pointer sweep never exposes an edge.
             component Layer: Item {
@@ -96,6 +129,13 @@ ShellRoot {
                 Layer {
                     source: "file://" + root.share + "assets/" + root.activeId + "/front.png"
                     amplitude: root.active.front
+                }
+                Neko {
+                    sprite: "file://" + root.share + "assets/oneko.gif"
+                    targetX: window.cursorX
+                    targetY: window.cameraY + window.cursorY
+                    worldHeight: window.space.count * window.height
+                    cameraY: window.smoothCameraY
                 }
             }
         }

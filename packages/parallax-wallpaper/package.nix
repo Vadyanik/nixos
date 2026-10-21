@@ -11,7 +11,7 @@ pkgs.stdenvNoCC.mkDerivation {
   installPhase = ''
     share=$out/share/parallax-wallpaper
     mkdir -p $share $out/bin
-    cp -r assets wallpapers.json parallax-pointer.py parallax-wallpaper.py shell.qml $share/
+    cp -r assets wallpapers.json parallax-pointer.py parallax-wallpaper.py shell.qml Neko.qml $share/
     substituteInPlace $share/shell.qml \
       --replace-fail '@python@' '${python}/bin/python3' \
       --replace-fail '@share@' "$share/"

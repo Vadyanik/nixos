@@ -380,7 +380,9 @@ ShellRoot {
                         height: 32
                         width: Math.max(0, panelContent.width / 2 - Math.max(clockLabel.width, volumeLabel.width) / 2 - 16 - anchors.rightMargin - rightRow.width - rightRow.anchors.rightMargin)
                         MouseArea { anchors.fill: parent; acceptedButtons: Qt.LeftButton | Qt.RightButton; onClicked: event => { if (event.button === Qt.RightButton) keystrokes.latinKeys = !keystrokes.latinKeys; else keystrokes.opened = !keystrokes.opened; } }
-                        readonly property bool holding: keystrokes.current.secret || keystrokes.current.mods.length > 0 || keystrokes.current.key !== ""
+                        // The held chord shows only for hotkeys in progress (any modifier but Shift)
+                        // and for the password lock; plain typing already appears in its word.
+                        readonly property bool holding: keystrokes.current.secret || keystrokes.current.mods.some(m => m !== "shift")
                         Row {
                             id: heldRow
                             anchors.right: parent.right
@@ -421,6 +423,7 @@ ShellRoot {
                                 required property int count
                                 required property int index
                                 required property real born
+                                required property bool word
                                 readonly property real fade: Math.max(0, Math.min(1, 1 - (keystrokes.now - born - keystrokes.fadeDelay) / (keystrokes.lifetime - keystrokes.fadeDelay)))
                                 property real fit: x - keystrokesList.contentX >= 0 ? 1 : 0
                                 Behavior on fit { NumberAnimation { duration: 200 } }
@@ -442,7 +445,8 @@ ShellRoot {
                                             required property string modelData
                                             height: 32
                                             verticalAlignment: Text.AlignVCenter
-                                            text: modelData
+                                            // Very long words keep their tail, where typing happens.
+                                            text: entry.word && modelData.length > 30 ? "…" + modelData.slice(-29) : modelData
                                             color: root.palette.foreground
                                             font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18 }
                                         }

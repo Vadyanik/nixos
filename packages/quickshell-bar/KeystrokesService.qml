@@ -84,7 +84,7 @@ Item {
             entryModel.setProperty(0, "count", first.count + 1);
             entryModel.setProperty(0, "born", Date.now());
         } else {
-            entryModel.insert(0, {parts: joined, count: 1, born: Date.now(), word: false});
+            entryModel.insert(0, {parts: joined, count: 1, born: Date.now(), word: false, cmd: false});
             trim();
         }
     }
@@ -98,7 +98,7 @@ Item {
             entryModel.setProperty(0, "parts", first.parts + text);
             entryModel.setProperty(0, "born", time);
         } else {
-            entryModel.insert(0, {parts: text, count: 1, born: time, word: true});
+            entryModel.insert(0, {parts: text, count: 1, born: time, word: true, cmd: false});
             trim();
         }
         wordOpen = true;
@@ -120,7 +120,52 @@ Item {
         lastTyped = Date.now();
         return true;
     }
+    // Neovim (mode reported by the reader): Insert and terminal mode type words as
+    // usual. In Normal/Visual every command is one token drawn like a word ("dw",
+    // "ciw", "5j", "\"ayy"); a token stays open while Neovim waits for the rest of
+    // the command, and identical finished tokens in a row fold into "j ×4".
+    // ":", "/" and "?" open a command-line token that takes the typed text.
+    property bool vimPending: false
+    function vimState(mode, pending) {
+        vimPending = pending;
+        if (pending || !/^(n|v|V|\x16|s|S|\x13)/.test(mode)) return;
+        const first = entryModel.count > 0 ? entryModel.get(0) : null;
+        if (!first || !first.cmd) return;
+        if (/^"[^"]$/.test(first.parts)) { vimPending = true; return; }  // register prefix: "a + command
+        const second = entryModel.count > 1 ? entryModel.get(1) : null;
+        if (second && second.cmd && second.parts === first.parts) {
+            entryModel.setProperty(1, "count", second.count + first.count);
+            entryModel.setProperty(1, "born", Date.now());
+            entryModel.remove(0);
+        }
+    }
+    // Returns true when the key was taken as Neovim input.
+    function vimKey(chord) {
+        const mode = chord.vim;
+        if (/^[iRt]/.test(mode) || chord.mods.includes("super")) return false;
+        const others = chord.mods.filter(m => m !== "shift");
+        const shift = others.length < chord.mods.length;
+        if (mode.startsWith("c")) {
+            if (others.length === 0 && chord.key.length === 1) typeCharacter(keyText(chord.key, shift));
+            else if (chord.mods.length === 0 && chord.key === "space" && wordOpen) typeCharacter(" ");
+            else if (!(chord.mods.length === 0 && chord.key === "backspace" && eraseCharacter())) return false;
+            return true;
+        }
+        const text = parts(chord).join("");
+        const first = entryModel.count > 0 ? entryModel.get(0) : null;
+        if (vimPending && first && first.cmd) {
+            entryModel.setProperty(0, "parts", first.parts + text);
+            entryModel.setProperty(0, "born", Date.now());
+        } else {
+            entryModel.insert(0, {parts: text, count: 1, born: Date.now(), word: true, cmd: true});
+            trim();
+        }
+        wordOpen = [":", "/", "?"].includes(text);  // the command line continues this token
+        lastTyped = Date.now();
+        return true;
+    }
     function push(chord) {
+        if (chord.vim !== undefined && vimKey(chord)) { now = Date.now(); return; }
         const others = chord.mods.filter(m => m !== "shift");
         const shift = others.length < chord.mods.length;
         if (!chord.key) {
@@ -147,6 +192,7 @@ Item {
         if (event.type === "state") current = {mods: event.mods, key: event.key, secret: event.secret === true};
         else if (event.type === "chord") push(event);
         else if (event.type === "boundary") wordOpen = false;
+        else if (event.type === "vim") vimState(event.mode, event.pending);
         if (current.secret) wordOpen = false;
     }
 

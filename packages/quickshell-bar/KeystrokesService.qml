@@ -44,24 +44,26 @@ Item {
         if (latinKeys) return null;
         return layoutName.startsWith("Russian") ? russian : (layoutName.startsWith("Ukrainian") ? ukrainian : null);
     }
-    // Text of a single key. Letters stay lowercase unless `shifted`.
-    function keyText(name, shifted) {
+    // Text of a single key. Letters stay lowercase unless `shifted`; `latin`
+    // ignores the RU/UA layout (hotkeys are bound to the Latin keys).
+    function keyText(name, shifted, latin) {
         if (glyphs[name]) return glyphs[name];
         if (name.length !== 1) return name.startsWith("kp") ? name.slice(2).toUpperCase() : name.toUpperCase();
-        const table = layoutTable();
+        const table = latin ? null : layoutTable();
         const base = table && table[name] ? table[name] : name;
         if (!shifted) return base;
         const symbols = table === russian ? cyrillicShift : (table === ukrainian ? ukrainianShift : usShift);
         return symbols[name] || (base.toUpperCase() !== base ? base.toUpperCase() : (usShift[name] || base));
     }
     // Pieces of one chord. Shift alone on a character key becomes its capital or
-    // symbol (n -> N, 1 -> !) instead of a shift icon; with other modifiers it stays an icon.
+    // symbol (n -> N, 1 -> !) instead of a shift icon; with other modifiers it stays
+    // an icon and the key is shown in Latin.
     function parts(chord) {
         const others = chord.mods.filter(m => m !== "shift");
         const shift = chord.mods.length > others.length;
         const absorb = shift && others.length === 0 && chord.key.length === 1;
         const result = absorb ? [] : chord.mods.map(m => glyphs[m]);
-        if (chord.key) result.push(keyText(chord.key, absorb));
+        if (chord.key) result.push(keyText(chord.key, absorb, others.length > 0));
         return result;
     }
     // Typing is grouped into words: plain characters (Shift only changes case)

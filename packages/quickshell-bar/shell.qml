@@ -359,7 +359,7 @@ ShellRoot {
                             visible: keystrokes.opened
                             height: 32
                             width: Math.max(0, panelContent.width / 2 - Math.max(clockLabel.width, volumeLabel.width) / 2 - 16 - leftRow.anchors.leftMargin - x)
-                            readonly property bool holding: keystrokes.current.mods.length > 0 || keystrokes.current.key !== ""
+                            readonly property bool holding: keystrokes.current.secret || keystrokes.current.mods.length > 0 || keystrokes.current.key !== ""
                             Row {
                                 id: heldRow
                                 height: 32
@@ -371,21 +371,21 @@ ShellRoot {
                                 NumberAnimation on appear { id: heldAppear; running: false; from: 0; to: 1; duration: 240; easing.type: Easing.OutCubic }
                                 Connections { target: keystrokesBox; function onHoldingChanged() { if (keystrokesBox.holding) heldAppear.restart(); } }
                                 Repeater {
-                                    model: keystrokesBox.holding ? keystrokes.parts(keystrokes.current) : ["󰌌"]
+                                    model: keystrokes.current.secret ? ["󰌾"] : (keystrokesBox.holding ? keystrokes.parts(keystrokes.current) : [])
                                     Text {
                                         required property string modelData
                                         height: 32
                                         verticalAlignment: Text.AlignVCenter
                                         text: modelData
-                                        color: keystrokesBox.holding ? root.palette.accent : root.palette.mutedForeground
+                                        color: keystrokes.current.secret ? root.palette.mutedForeground : root.palette.accent
                                         font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18; bold: true }
                                     }
                                 }
                             }
                             ListView {
                                 id: keystrokesList
-                                anchors { left: heldRow.right; leftMargin: 14; top: parent.top; bottom: parent.bottom }
-                                width: Math.max(0, keystrokesBox.width - heldRow.width - 14)
+                                anchors { left: heldRow.right; leftMargin: heldRow.width > 0 ? 14 : 0; top: parent.top; bottom: parent.bottom }
+                                width: Math.max(0, keystrokesBox.width - heldRow.width - anchors.leftMargin)
                                 orientation: ListView.Horizontal
                                 spacing: 14
                                 clip: true

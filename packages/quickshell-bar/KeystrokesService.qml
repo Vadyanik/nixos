@@ -11,7 +11,7 @@ Item {
     property bool opened: false
     // Show RU/UA layout keys as the Latin keys they sit on.
     property bool latinKeys: false
-    property var current: ({mods: [], key: ""})
+    property var current: ({mods: [], key: "", secret: false})
     readonly property alias entries: entryModel
     readonly property int maxEntries: 40
     // Entries stay fully visible for fadeDelay ms, then fade linearly and are
@@ -81,11 +81,11 @@ Item {
     function handle(line) {
         let event;
         try { event = JSON.parse(line); } catch (e) { return; }
-        if (event.type === "state") current = {mods: event.mods, key: event.key};
+        if (event.type === "state") current = {mods: event.mods, key: event.key, secret: event.secret === true};
         else if (event.type === "chord") push(event);
     }
 
-    onOpenedChanged: if (opened) { entryModel.clear(); current = {mods: [], key: ""}; }
+    onOpenedChanged: if (opened) { entryModel.clear(); current = {mods: [], key: "", secret: false}; }
 
     ListModel { id: entryModel }
     // One clock drives every entry's fade and drops the ones past their lifetime.

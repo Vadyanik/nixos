@@ -58,7 +58,6 @@ in
     librewolf
     pavucontrol
     opencode
-    chromium
     apple-cursor
     gcc
     polkit_gnome
@@ -212,5 +211,7 @@ in
     nvd
     vesktop
     # vnix:end
+    # Exposes password fields over AT-SPI so the bar's keystroke echo can hide them.
+    (chromium.override { commandLineArgs = [ "--force-renderer-accessibility" ]; })
   ];
 }

@@ -368,9 +368,9 @@ ShellRoot {
                         color: root.palette.accent
                         font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18; bold: true }
                     }
-                    // Live key echo, leftmost of the right-side modules: entries oldest to newest
-                    // left to right, the held chord last. Keys pressed together sit close;
-                    // separate presses are a space apart. It grows left up to the clock and
+                    // Live key echo, leftmost of the right-side modules: keys oldest to newest
+                    // left to right, the held chord last. Keys sit flush, a Space press is a
+                    // space, and combinations get a gap on both sides. It grows left up to the clock and
                     // entries that no longer fit fade out whole. The area stays clickable when
                     // the echo is off: a left click turns it on or off, a right click switches
                     // RU/UA letters to their Latin keys and back.
@@ -411,53 +411,44 @@ ShellRoot {
                             anchors { left: parent.left; right: heldRow.left; rightMargin: heldRow.width > 0 ? 14 : 0; top: parent.top; bottom: parent.bottom }
                             orientation: ListView.Horizontal
                             layoutDirection: Qt.RightToLeft  // newest (index 0) at the right
-                            spacing: 14
+                            spacing: 0  // keys sit flush; only combinations get a gap
                             clip: true
                             interactive: false
                             model: keystrokes.entries
-                            displaced: Transition { NumberAnimation { property: "x"; duration: 220; easing.type: Easing.OutCubic } }
+                            displaced: Transition { NumberAnimation { property: "x"; duration: 180; easing.type: Easing.OutCubic } }
                             remove: Transition { NumberAnimation { property: "opacity"; to: 0; duration: 400 } }
                             delegate: Item {
                                 id: entry
                                 required property string parts
-                                required property int count
-                                required property int index
+                                required property bool combo
                                 required property real born
-                                required property bool word
+                                readonly property int gap: combo ? 10 : 0  // on both sides of a combination
                                 readonly property real fade: Math.max(0, Math.min(1, 1 - (keystrokes.now - born - keystrokes.fadeDelay) / (keystrokes.lifetime - keystrokes.fadeDelay)))
                                 property real fit: x - keystrokesList.contentX >= 0 ? 1 : 0
                                 Behavior on fit { NumberAnimation { duration: 200 } }
-                                width: entryRow.width
+                                width: entryRow.width + 2 * gap
                                 height: 32
                                 Row {
                                     id: entryRow
+                                    x: entry.gap
                                     height: 32
                                     spacing: 6
                                     // Slide in from the right on creation; appear runs 0 -> 1.
                                     property real appear: 0
-                                    transform: Translate { x: (1 - entryRow.appear) * 28 }
+                                    transform: Translate { x: (1 - entryRow.appear) * 16 }
                                     opacity: appear * entry.fit * entry.fade
                                     Component.onCompleted: appearAnimation.start()
-                                    NumberAnimation on appear { id: appearAnimation; running: false; to: 1; duration: 240; easing.type: Easing.OutCubic }
+                                    NumberAnimation on appear { id: appearAnimation; running: false; to: 1; duration: 200; easing.type: Easing.OutCubic }
                                     Repeater {
                                         model: entry.parts.split(keystrokes.separator)
                                         Text {
                                             required property string modelData
                                             height: 32
                                             verticalAlignment: Text.AlignVCenter
-                                            // Very long words keep their tail, where typing happens.
-                                            text: entry.word && modelData.length > 30 ? "…" + modelData.slice(-29) : modelData
+                                            text: modelData
                                             color: root.palette.foreground
                                             font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18 }
                                         }
-                                    }
-                                    Text {
-                                        visible: entry.count > 1
-                                        height: 32
-                                        verticalAlignment: Text.AlignVCenter
-                                        text: "×" + entry.count
-                                        color: root.palette.mutedForeground
-                                        font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18 }
                                     }
                                 }
                             }

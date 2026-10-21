@@ -185,6 +185,7 @@ ShellRoot {
     }
     PwObjectTracker { objects: [Pipewire.defaultAudioSink] }
     HotkeysPanel { id: hotkeys; theme: root.palette; compositor: desktop }
+    KeystrokesService { id: keystrokes; compositor: desktop }
     IpcHandler {
         target: "bar"
         function toggleHotkeys(): void {
@@ -194,6 +195,9 @@ ShellRoot {
         }
         function closeHotkeys(): void { hotkeys.opened = false; }
         function hotkeysStatus(): string { return JSON.stringify({opened: hotkeys.opened, count: hotkeys.entries.length}); }
+        function toggleKeystrokes(): void { keystrokes.opened = !keystrokes.opened; }
+        function toggleKeystrokesLatin(): void { keystrokes.latinKeys = !keystrokes.latinKeys; }
+        function keystrokesStatus(): string { return JSON.stringify({opened: keystrokes.opened, latinKeys: keystrokes.latinKeys, current: keystrokes.current, entries: keystrokes.snapshot()}); }
         function toggleControlCenter(): void {
             if (root.controlOpen || root.notificationsOpen) { root.controlOpen = false; root.notificationsOpen = false; }
             else root.controlOpen = true;
@@ -363,6 +367,97 @@ ShellRoot {
                         text: Pipewire.defaultAudioSink?.audio?.muted ? "MUTE" : "VOL " + root.volumePercent + "%"
                         color: root.palette.accent
                         font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18; bold: true }
+                    }
+                    // Live key echo, leftmost of the right-side modules: entries oldest to newest
+                    // left to right, the held chord last. Keys pressed together sit close;
+                    // separate presses are a space apart. It grows left up to the clock and
+                    // entries that no longer fit fade out whole. The area stays clickable when
+                    // the echo is off: a left click turns it on or off, a right click switches
+                    // RU/UA letters to their Latin keys and back.
+                    Item {
+                        id: keystrokesBox
+                        anchors { right: rightRow.left; rightMargin: 14 }
+                        height: 32
+                        width: Math.max(0, panelContent.width / 2 - Math.max(clockLabel.width, volumeLabel.width) / 2 - 16 - anchors.rightMargin - rightRow.width - rightRow.anchors.rightMargin)
+                        MouseArea { anchors.fill: parent; acceptedButtons: Qt.LeftButton | Qt.RightButton; onClicked: event => { if (event.button === Qt.RightButton) keystrokes.latinKeys = !keystrokes.latinKeys; else keystrokes.opened = !keystrokes.opened; } }
+                        readonly property bool holding: keystrokes.current.secret || keystrokes.current.mods.length > 0 || keystrokes.current.key !== ""
+                        Row {
+                            id: heldRow
+                            anchors.right: parent.right
+                            height: 32
+                            spacing: 6
+                            // The live chord slides in from the right when a new press starts.
+                            property real appear: 1
+                            transform: Translate { x: (1 - heldRow.appear) * 28 }
+                            opacity: appear
+                            NumberAnimation on appear { id: heldAppear; running: false; from: 0; to: 1; duration: 240; easing.type: Easing.OutCubic }
+                            Connections { target: keystrokesBox; function onHoldingChanged() { if (keystrokesBox.holding) heldAppear.restart(); } }
+                            Repeater {
+                                model: keystrokes.current.secret ? ["󰌾"] : (keystrokesBox.holding ? keystrokes.parts(keystrokes.current) : [])
+                                Text {
+                                    required property string modelData
+                                    height: 32
+                                    verticalAlignment: Text.AlignVCenter
+                                    text: modelData
+                                    color: keystrokes.current.secret ? root.palette.mutedForeground : root.palette.accent
+                                    font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18; bold: true }
+                                }
+                            }
+                        }
+                        ListView {
+                            id: keystrokesList
+                            anchors { left: parent.left; right: heldRow.left; rightMargin: heldRow.width > 0 ? 14 : 0; top: parent.top; bottom: parent.bottom }
+                            orientation: ListView.Horizontal
+                            layoutDirection: Qt.RightToLeft  // newest (index 0) at the right
+                            spacing: 14
+                            clip: true
+                            interactive: false
+                            model: keystrokes.entries
+                            displaced: Transition { NumberAnimation { property: "x"; duration: 220; easing.type: Easing.OutCubic } }
+                            remove: Transition { NumberAnimation { property: "opacity"; to: 0; duration: 400 } }
+                            delegate: Item {
+                                id: entry
+                                required property string parts
+                                required property int count
+                                required property int index
+                                required property real born
+                                readonly property real fade: Math.max(0, Math.min(1, 1 - (keystrokes.now - born - keystrokes.fadeDelay) / (keystrokes.lifetime - keystrokes.fadeDelay)))
+                                property real fit: x - keystrokesList.contentX >= 0 ? 1 : 0
+                                Behavior on fit { NumberAnimation { duration: 200 } }
+                                width: entryRow.width
+                                height: 32
+                                Row {
+                                    id: entryRow
+                                    height: 32
+                                    spacing: 6
+                                    // Slide in from the right on creation; appear runs 0 -> 1.
+                                    property real appear: 0
+                                    transform: Translate { x: (1 - entryRow.appear) * 28 }
+                                    opacity: appear * entry.fit * entry.fade
+                                    Component.onCompleted: appearAnimation.start()
+                                    NumberAnimation on appear { id: appearAnimation; running: false; to: 1; duration: 240; easing.type: Easing.OutCubic }
+                                    Repeater {
+                                        model: entry.parts.split(keystrokes.separator)
+                                        Text {
+                                            required property string modelData
+                                            height: 32
+                                            verticalAlignment: Text.AlignVCenter
+                                            text: modelData
+                                            color: root.palette.foreground
+                                            font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18 }
+                                        }
+                                    }
+                                    Text {
+                                        visible: entry.count > 1
+                                        height: 32
+                                        verticalAlignment: Text.AlignVCenter
+                                        text: "×" + entry.count
+                                        color: root.palette.mutedForeground
+                                        font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18 }
+                                    }
+                                }
+                            }
+                        }
                     }
                     Row {
                         id: rightRow

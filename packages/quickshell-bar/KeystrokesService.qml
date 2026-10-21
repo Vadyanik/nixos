@@ -22,7 +22,7 @@ Item {
     readonly property string separator: "\u001f"
     readonly property var glyphs: ({
         super: "\uf313", ctrl: "󰘴", alt: "󰘵", altgr: "󰘵", shift: "󰘶",
-        enter: "󰌑", kpenter: "󰌑", backspace: "␣", tab: "󰌒", esc: "󱊷", space: "󱁐",
+        enter: "󰌑", kpenter: "󰌑", backspace: "󰁮", tab: "󰌒", esc: "󱊷", space: "␣",
         caps: "󰪛", delete: "󰆴", insert: "󰏫", menu: "󰍜", print: "󰹑",
         up: "\uf062", down: "\uf063", left: "\uf060", right: "\uf061",
         home: "󰜷", end: "󰜮", pageup: "󰶣", pagedown: "󰶡",

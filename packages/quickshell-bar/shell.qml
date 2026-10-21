@@ -185,7 +185,7 @@ ShellRoot {
     }
     PwObjectTracker { objects: [Pipewire.defaultAudioSink] }
     HotkeysPanel { id: hotkeys; theme: root.palette; compositor: desktop }
-    KeystrokesPanel { id: keystrokes; theme: root.palette; compositor: desktop }
+    KeystrokesService { id: keystrokes; compositor: desktop }
     IpcHandler {
         target: "bar"
         function toggleHotkeys(): void {
@@ -349,6 +349,34 @@ ShellRoot {
                             foreground: alert.value.class === "safe" ? root.palette["on-primary"] : root.palette.white
                             leftAction: () => root.run("xdg-open https://alerts.in.ua/")
                             rightAction: () => alert.refresh()
+                        }
+                        // Live key echo; history runs oldest to newest, the held chord is last.
+                        Row {
+                            id: keystrokesRow
+                            visible: keystrokes.opened
+                            height: 32
+                            spacing: 14
+                            Text { text: "│"; height: 32; verticalAlignment: Text.AlignVCenter; color: root.palette.separator; font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18 } }
+                            Repeater {
+                                model: keystrokes.history.slice().reverse()
+                                Text {
+                                    required property var modelData
+                                    required property int index
+                                    height: 32
+                                    verticalAlignment: Text.AlignVCenter
+                                    text: keystrokes.label(modelData) + (modelData.count > 1 ? " ×" + modelData.count : "")
+                                    color: root.palette.foreground
+                                    opacity: 0.35 + 0.5 * (index + 1) / Math.max(1, keystrokes.history.length)
+                                    font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18 }
+                                }
+                            }
+                            Text {
+                                height: 32
+                                verticalAlignment: Text.AlignVCenter
+                                text: keystrokes.current.mods.length || keystrokes.current.key ? keystrokes.label(keystrokes.current) : "󰌌"
+                                color: keystrokes.current.mods.length || keystrokes.current.key ? root.palette.accent : root.palette.mutedForeground
+                                font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18; bold: true }
+                            }
                         }
                     }
                     Text {

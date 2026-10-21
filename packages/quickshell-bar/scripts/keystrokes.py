@@ -5,7 +5,8 @@ Events (one JSON object per line):
   {"type": "state", "mods": ["super", "shift"], "key": "a"}   live view of what is held
   {"type": "chord", "mods": ["ctrl"], "key": "c"}             a completed press for the history
 
-Keys are physical (US layout) names; the shell maps them to icons.
+Keys are physical (US layout) names; Esc and Caps Lock are swapped (xkb caps:swapescape),
+so evdev code 58 is reported as esc and code 1 as caps; the shell maps them to icons.
 Needs read access to /dev/input (the `input` group).
 """
 import glob
@@ -24,7 +25,7 @@ MODS = {
 }
 MOD_ORDER = ["super", "ctrl", "alt", "altgr", "shift"]
 NAMES = {
-    1: "esc", 14: "backspace", 15: "tab", 28: "enter", 57: "space", 58: "caps",
+    1: "caps", 14: "backspace", 15: "tab", 28: "enter", 57: "space", 58: "esc",
     69: "numlock", 70: "scrolllock", 99: "print", 119: "pause", 110: "insert",
     111: "delete", 102: "home", 107: "end", 104: "pageup", 109: "pagedown",
     103: "up", 108: "down", 105: "left", 106: "right", 127: "menu", 96: "kpenter",

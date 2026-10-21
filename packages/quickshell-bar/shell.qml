@@ -185,6 +185,7 @@ ShellRoot {
     }
     PwObjectTracker { objects: [Pipewire.defaultAudioSink] }
     HotkeysPanel { id: hotkeys; theme: root.palette; compositor: desktop }
+    KeystrokesPanel { id: keystrokes; theme: root.palette; compositor: desktop }
     IpcHandler {
         target: "bar"
         function toggleHotkeys(): void {
@@ -194,6 +195,8 @@ ShellRoot {
         }
         function closeHotkeys(): void { hotkeys.opened = false; }
         function hotkeysStatus(): string { return JSON.stringify({opened: hotkeys.opened, count: hotkeys.entries.length}); }
+        function toggleKeystrokes(): void { keystrokes.opened = !keystrokes.opened; }
+        function keystrokesStatus(): string { return JSON.stringify({opened: keystrokes.opened, current: keystrokes.current, history: keystrokes.history}); }
         function toggleControlCenter(): void {
             if (root.controlOpen || root.notificationsOpen) { root.controlOpen = false; root.notificationsOpen = false; }
             else root.controlOpen = true;

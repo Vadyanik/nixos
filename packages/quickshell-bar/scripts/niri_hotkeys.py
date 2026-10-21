@@ -50,7 +50,7 @@ def describe(body):
         if command == 'quickshell':
             return {'toggleControlCenter': 'Control Center', 'openNotifications': 'Notification Center',
                     'toggleHotkeys': 'Toggle shortcut guide', 'volumeUp': 'Volume +2%',
-                    'volumeDown': 'Volume −2%'}.get(quoted[-1], quoted[-1])
+                    'volumeDown': 'Volume −2%', 'toggleKeystrokes': 'Keystroke viewer'}.get(quoted[-1], quoted[-1])
         if command == 'desktop-screenshot':
             return 'Screenshot region → editor' if quoted[-1] == 'edit' else 'Screenshot region → clipboard'
         if command == 'desktop-scratchpad':

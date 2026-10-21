@@ -13,7 +13,7 @@ Item {
     property bool latinKeys: false
     property var current: ({mods: [], key: ""})
     property var history: []
-    readonly property int maxHistory: 8
+    readonly property int maxHistory: 40
     readonly property var glyphs: ({
         super: "\uf313", ctrl: "󰘴", alt: "󰘵", altgr: "󰘵", shift: "󰘶",
         enter: "󰌑", kpenter: "󰌑", backspace: "󰁮", tab: "󰌒", esc: "󱊷", space: "󱁐",
@@ -42,23 +42,19 @@ Item {
     function label(chord) {
         const parts = chord.mods.map(glyph);
         if (chord.key) parts.push(glyph(chord.key));
-        return parts.join(" + ");
+        return parts.join("");
     }
-    // Oldest first: entries fill the bar left to right and the row restarts
-    // from the left edge when full, so nothing scrolls sideways.
+    // Newest first. The bar shows as many entries as fit and hides the rest,
+    // so the oldest ones drop off the right edge one at a time.
     // Entries keep the text rendered when they were typed, so switching
     // latinKeys later does not rewrite what is already on the bar.
     function push(chord) {
         const text = label(chord);
-        const combo = chord.mods.length > 0 && (chord.key !== "" || chord.mods.length > 1);
-        const last = history[history.length - 1];
-        if (last && last.text === text) {
-            // Fold repeats ("A ×3") instead of filling the row.
-            history = history.slice(0, -1).concat([{text: text, combo: combo, count: last.count + 1}]);
-        } else {
-            const base = history.length >= maxHistory ? [] : history;
-            history = base.concat([{text: text, combo: combo, count: 1}]);
-        }
+        const last = history[0];
+        if (last && last.text === text)
+            history = [{text: text, count: last.count + 1}].concat(history.slice(1));  // fold repeats into "A ×3"
+        else
+            history = [{text: text, count: 1}].concat(history).slice(0, maxHistory);
         idle.restart();
     }
     function handle(line) {
@@ -71,7 +67,7 @@ Item {
     onOpenedChanged: if (opened) { history = []; current = {mods: [], key: ""}; }
 
     // Fade old history away once typing stops.
-    Timer { id: idle; interval: 6000; onTriggered: panel.history = [] }
+    Timer { id: idle; interval: 20000; onTriggered: panel.history = [] }
     Process {
         command: ["python3", Quickshell.shellPath("scripts/keystrokes.py")]
         running: panel.opened

@@ -351,38 +351,38 @@ ShellRoot {
                             leftAction: () => root.run("xdg-open https://alerts.in.ua/")
                             rightAction: () => alert.refresh()
                         }
-                        // Live key echo, left to right: history oldest to newest, the held chord last.
-                        Row {
-                            id: keystrokesRow
+                        // Live key echo: the held chord first, then history newest to oldest.
+                        // Keys pressed together touch; separate presses are a space apart.
+                        // It fills the bar up to the clock; entries that do not fit fade out whole.
+                        Item {
+                            id: keystrokesBox
                             visible: keystrokes.opened
                             height: 32
-                            spacing: 14
-                            Text { text: "│"; height: 32; verticalAlignment: Text.AlignVCenter; color: root.palette.separator; font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18 } }
-                            Repeater {
-                                model: keystrokes.history
-                                Row {
-                                    required property var modelData
-                                    required property int index
+                            clip: true
+                            width: Math.max(0, panelContent.width / 2 - Math.max(clockLabel.width, volumeLabel.width) / 2 - 16 - leftRow.anchors.leftMargin - x)
+                            Row {
+                                height: 32
+                                spacing: 14
+                                Text {
                                     height: 32
-                                    spacing: 14
-                                    // A dot marks a new press; keys joined by "+" were held together.
-                                    Text { visible: index > 0; height: 32; verticalAlignment: Text.AlignVCenter; text: "·"; color: root.palette.separator; font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18; bold: true } }
+                                    verticalAlignment: Text.AlignVCenter
+                                    text: keystrokes.current.mods.length || keystrokes.current.key ? keystrokes.label(keystrokes.current) : "󰌌"
+                                    color: keystrokes.current.mods.length || keystrokes.current.key ? root.palette.accent : root.palette.mutedForeground
+                                    font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18; bold: true }
+                                }
+                                Repeater {
+                                    model: keystrokes.history
                                     Text {
+                                        required property var modelData
+                                        required property int index
                                         height: 32
                                         verticalAlignment: Text.AlignVCenter
                                         text: modelData.text + (modelData.count > 1 ? " ×" + modelData.count : "")
-                                        color: modelData.combo ? root.palette.accent : root.palette.foreground
-                                        opacity: 0.4 + 0.6 * (index + 1) / Math.max(1, keystrokes.history.length)
-                                        font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18; bold: modelData.combo }
+                                        color: root.palette.foreground
+                                        opacity: x + width <= keystrokesBox.width ? Math.max(0.3, 1 - index * 0.04) : 0
+                                        font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18 }
                                     }
                                 }
-                            }
-                            Text {
-                                height: 32
-                                verticalAlignment: Text.AlignVCenter
-                                text: keystrokes.current.mods.length || keystrokes.current.key ? keystrokes.label(keystrokes.current) : "󰌌"
-                                color: keystrokes.current.mods.length || keystrokes.current.key ? root.palette.accent : root.palette.mutedForeground
-                                font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18; bold: true }
                             }
                         }
                     }

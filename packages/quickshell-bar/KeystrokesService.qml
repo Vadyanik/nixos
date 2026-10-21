@@ -9,7 +9,7 @@ Item {
     id: panel
     required property var compositor
     property bool opened: true  // on by default; toggled by clicking its area in the bar
-    // Show RU/UA layout keys as the Latin keys they sit on.
+    // Show RU/UA layout keys as the Latin keys they sit on; right click in the bar toggles it.
     property bool latinKeys: false
     property var current: ({mods: [], key: "", secret: false})
     readonly property alias entries: entryModel

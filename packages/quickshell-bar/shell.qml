@@ -372,13 +372,14 @@ ShellRoot {
                     // left to right, the held chord last. Keys pressed together sit close;
                     // separate presses are a space apart. It grows left up to the clock and
                     // entries that no longer fit fade out whole. The area stays clickable when
-                    // the echo is off: a left click turns it on or off.
+                    // the echo is off: a left click turns it on or off, a right click switches
+                    // RU/UA letters to their Latin keys and back.
                     Item {
                         id: keystrokesBox
                         anchors { right: rightRow.left; rightMargin: 14 }
                         height: 32
                         width: Math.max(0, panelContent.width / 2 - Math.max(clockLabel.width, volumeLabel.width) / 2 - 16 - anchors.rightMargin - rightRow.width - rightRow.anchors.rightMargin)
-                        MouseArea { anchors.fill: parent; acceptedButtons: Qt.LeftButton; onClicked: keystrokes.opened = !keystrokes.opened }
+                        MouseArea { anchors.fill: parent; acceptedButtons: Qt.LeftButton | Qt.RightButton; onClicked: event => { if (event.button === Qt.RightButton) keystrokes.latinKeys = !keystrokes.latinKeys; else keystrokes.opened = !keystrokes.opened; } }
                         readonly property bool holding: keystrokes.current.secret || keystrokes.current.mods.length > 0 || keystrokes.current.key !== ""
                         Row {
                             id: heldRow

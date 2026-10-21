@@ -22,7 +22,7 @@ Item {
     readonly property string separator: "\u001f"
     readonly property var glyphs: ({
         super: "\uf313", ctrl: "󰘴", alt: "󰘵", altgr: "󰘵", shift: "󰘶",
-        enter: "󰌑", kpenter: "󰌑", backspace: "󰁮", tab: "󰌒", esc: "󱊷", space: "󱁐",
+        enter: "󰌑", kpenter: "󰌑", backspace: "␣", tab: "󰌒", esc: "󱊷", space: "󱁐",
         caps: "󰪛", delete: "󰆴", insert: "󰏫", menu: "󰍜", print: "󰹑",
         up: "\uf062", down: "\uf063", left: "\uf060", right: "\uf061",
         home: "󰜷", end: "󰜮", pageup: "󰶣", pagedown: "󰶡",
@@ -67,7 +67,7 @@ Item {
         return result;
     }
     // One continuous stream, newest first: every key is its own entry and
-    // entries sit flush. A real Space press adds a space. A combination (two or
+    // entries sit flush. Space shows as "␣" with a gap on both sides. A combination (two or
     // more keys pressed together) is one entry with a gap on both sides. Shift on
     // a character only changes it (n -> N), so that stays a single key.
     // Repeats fold into "×N": combinations and special keys from the second press,
@@ -76,7 +76,7 @@ Item {
         const pieces = parts(chord);
         if (!pieces.length || (pieces.length === 1 && chord.key === "" && chord.mods[0] === "shift")) return;  // lone Shift tap
         const space = chord.mods.length === 0 && chord.key === "space";
-        const text = space ? " " : pieces.join(separator);
+        const text = pieces.join(separator);
         const combo = pieces.length > 1;
         const character = !combo && (space || chord.key.length === 1);
         const time = Date.now();

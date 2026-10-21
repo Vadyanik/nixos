@@ -196,7 +196,8 @@ ShellRoot {
         function closeHotkeys(): void { hotkeys.opened = false; }
         function hotkeysStatus(): string { return JSON.stringify({opened: hotkeys.opened, count: hotkeys.entries.length}); }
         function toggleKeystrokes(): void { keystrokes.opened = !keystrokes.opened; }
-        function keystrokesStatus(): string { return JSON.stringify({opened: keystrokes.opened, current: keystrokes.current, history: keystrokes.history}); }
+        function toggleKeystrokesLatin(): void { keystrokes.latinKeys = !keystrokes.latinKeys; }
+        function keystrokesStatus(): string { return JSON.stringify({opened: keystrokes.opened, latinKeys: keystrokes.latinKeys, current: keystrokes.current, history: keystrokes.history}); }
         function toggleControlCenter(): void {
             if (root.controlOpen || root.notificationsOpen) { root.controlOpen = false; root.notificationsOpen = false; }
             else root.controlOpen = true;

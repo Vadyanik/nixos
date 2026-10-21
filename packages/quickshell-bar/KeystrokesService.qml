@@ -9,6 +9,8 @@ Item {
     id: panel
     required property var compositor
     property bool opened: false
+    // Show RU/UA layout keys as the Latin keys they sit on.
+    property bool latinKeys: false
     property var current: ({mods: [], key: ""})
     property var history: []
     readonly property int maxHistory: 8
@@ -32,7 +34,7 @@ Item {
         if (glyphs[name]) return glyphs[name];
         if (name.length === 1) {
             const table = layoutName.startsWith("Russian") ? russian : (layoutName.startsWith("Ukrainian") ? ukrainian : null);
-            if (table && table[name]) return table[name].toUpperCase();
+            if (!latinKeys && table && table[name]) return table[name].toUpperCase();
         }
         if (name.startsWith("kp")) return name.slice(2).toUpperCase();
         return name.toUpperCase();

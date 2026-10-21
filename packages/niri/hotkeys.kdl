@@ -19,6 +19,7 @@ binds {
     Mod+T repeat=false { spawn "librewolf"; }
     Mod+Tab repeat=false hotkey-overlay-title="Control Center" { spawn "quickshell" "ipc" "-c" "bar" "call" "bar" "toggleControlCenter"; }
     Mod+grave repeat=false hotkey-overlay-title="Keystroke viewer" { spawn "quickshell" "ipc" "-c" "bar" "call" "bar" "toggleKeystrokes"; }
+    Mod+Shift+grave repeat=false hotkey-overlay-title="Keystroke viewer: Latin / layout letters" { spawn "quickshell" "ipc" "-c" "bar" "call" "bar" "toggleKeystrokesLatin"; }
     Mod+Shift+Tab repeat=false hotkey-overlay-title="Notification Center" { spawn "quickshell" "ipc" "-c" "bar" "call" "bar" "openNotifications"; }
     Mod+C repeat=false { close-window; }
     Mod+Shift+C repeat=false { spawn "desktop-force-close"; }

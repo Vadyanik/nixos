@@ -72,7 +72,12 @@ ShellRoot {
             // The cat lives in a world of stacked workspaces; the camera shows the active one.
             readonly property var space: (root.pointer.ws || ({}))[window.screen.name] || ({ active: 1, count: 1 })
             readonly property real cameraY: (space.active - 1) * height
+            // Horizontal camera: start of the focused column, kept inside the strip.
+            readonly property real stripWidth: Math.max(width, space.strip || 0)
+            readonly property real cameraX: Math.max(0, Math.min(space.before || 0, (space.own_strip || 0) - width))
             property real smoothCameraY: cameraY
+            property real smoothCameraX: cameraX
+            Behavior on smoothCameraX { NumberAnimation { duration: 280; easing.type: Easing.InOutCubic } }
             Behavior on smoothCameraY { NumberAnimation { duration: 280; easing.type: Easing.InOutCubic } }
             property real lastRawX: NaN
             property real lastRawY: NaN
@@ -132,8 +137,10 @@ ShellRoot {
                 }
                 Neko {
                     sprite: "file://" + root.share + "assets/oneko.gif"
-                    targetX: window.cursorX
+                    targetX: window.cameraX + window.cursorX
                     targetY: window.cameraY + window.cursorY
+                    worldWidth: window.stripWidth
+                    cameraX: window.smoothCameraX
                     worldHeight: window.space.count * window.height
                     cameraY: window.smoothCameraY
                 }

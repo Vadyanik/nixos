@@ -66,13 +66,33 @@ class NiriIpc:
             return None
 
     def workspaces(self):
-        """Per output: the active workspace index and how many workspaces exist."""
+        """Per output: active workspace index, workspace count and column strip.
+
+        Niri does not report its scroll offset, so `before` (summed width of the
+        columns left of the focused one) and `strip` (all columns) let the wallpaper
+        approximate the horizontal camera.
+        """
+        windows = self.call('Windows') or []
+        columns = {}
+        focused = {}
+        for win in windows:
+            pos = (win.get('layout') or {}).get('pos_in_scrolling_layout')
+            if pos and win.get('workspace_id') is not None:
+                cols = columns.setdefault(win['workspace_id'], {})
+                cols[pos[0]] = max(cols.get(pos[0], 0), win['layout']['window_size'][0])
+                focused[win['id']] = pos[0]
         result = {}
         for ws in self.call('Workspaces') or []:
-            entry = result.setdefault(ws['output'], {'active': 1, 'count': 0})
+            entry = result.setdefault(
+                ws['output'], {'active': 1, 'count': 0, 'before': 0, 'strip': 0})
             entry['count'] = max(entry['count'], ws['idx'])
+            cols = columns.get(ws['id'], {})
+            entry['strip'] = max(entry['strip'], sum(cols.values()))
             if ws['is_active']:
                 entry['active'] = ws['idx']
+                column = focused.get(ws.get('active_window_id'), 1)
+                entry['before'] = sum(w for c, w in cols.items() if c < column)
+                entry['own_strip'] = sum(cols.values())
         return result
 
 

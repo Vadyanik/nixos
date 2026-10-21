@@ -10,6 +10,8 @@ Item {
     // Vertical extent of the cat's world: all workspaces of the output stacked.
     property real worldHeight: parent.height
     property real cameraY: 0
+    property real worldWidth: parent.width
+    property real cameraX: 0
     property real cell: 64
     property real speed: 10 * cell / 32
     property real posX: cell
@@ -38,7 +40,7 @@ Item {
         posX = targetX;
         posY = targetY;
     }
-    x: posX - cell / 2
+    x: posX - cell / 2 - cameraX
     y: posY - cell / 2 - cameraY
 
     Item {
@@ -70,7 +72,7 @@ Item {
             const options = ["sleeping", "scratchSelf"];
             if (posX < cell) options.push("scratchWallW");
             if (posY < cell) options.push("scratchWallN");
-            if (posX > parent.width - cell) options.push("scratchWallE");
+            if (posX > worldWidth - cell) options.push("scratchWallE");
             if (posY > worldHeight - cell) options.push("scratchWallS");
             idleAnimation = options[Math.floor(Math.random() * options.length)];
         }
@@ -107,7 +109,7 @@ Item {
         let dir = (dy / distance > 0.5 ? "N" : "") + (dy / distance < -0.5 ? "S" : "");
         dir += (dx / distance > 0.5 ? "W" : "") + (dx / distance < -0.5 ? "E" : "");
         setSprite(dir, frameCount);
-        posX = Math.min(Math.max(cell / 2, posX - dx / distance * speed), parent.width - cell / 2);
+        posX = Math.min(Math.max(cell / 2, posX - dx / distance * speed), worldWidth - cell / 2);
         posY = Math.min(Math.max(cell / 2, posY - dy / distance * speed), worldHeight - cell / 2);
     }
 

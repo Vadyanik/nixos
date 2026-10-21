@@ -199,6 +199,7 @@ Item {
     onOpenedChanged: { entryModel.clear(); wordOpen = false; current = {mods: [], key: "", secret: false}; }
 
     ListModel { id: entryModel }
+    Timer { id: restartReader; interval: 2000; onTriggered: if (panel.opened) reader.running = true }
     // One clock drives every entry's fade and drops the ones past their lifetime.
     Timer {
         interval: 100
@@ -211,8 +212,11 @@ Item {
         }
     }
     Process {
+        id: reader
         command: ["python3", Quickshell.shellPath("scripts/keystrokes.py")]
         running: panel.opened
+        // Restart after a crash instead of silently showing nothing.
+        onExited: (code, status) => { if (panel.opened) restartReader.restart(); }
         stdout: SplitParser { onRead: line => panel.handle(line) }
         stderr: StdioCollector { onStreamFinished: if (text.trim()) console.warn("Keystrokes:", text.trim()) }
     }

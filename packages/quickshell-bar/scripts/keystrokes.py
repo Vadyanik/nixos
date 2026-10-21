@@ -371,9 +371,9 @@ def main():
         if vim_check_at is not None and time.monotonic() >= vim_check_at:
             # Shortly after a key Neovim has handled it: report whether the command is complete.
             vim_check_at = None
-            state = nvim_mode(nvim) if nvim else None
-            if state:
-                emit(type="vim", mode=state[0], pending=state[1])
+            vim_state = nvim_mode(nvim) if nvim else None
+            if vim_state:
+                emit(type="vim", mode=vim_state[0], pending=vim_state[1])
         for fd in ready:
             try:
                 data = os.read(fd, EVENT.size * 64)
@@ -410,10 +410,10 @@ def main():
                         # The mode before this key decides how it reads (text or command);
                         # the state also closes the previous command if it is complete.
                         nvim = focused_nvim(window)
-                        state = nvim_mode(nvim) if nvim else None
-                        if state:
-                            emit(type="vim", mode=state[0], pending=state[1])
-                            emit(type="chord", mods=mods_now(), key=key_name(code), vim=state[0])
+                        vim_state = nvim_mode(nvim) if nvim else None
+                        if vim_state:
+                            emit(type="vim", mode=vim_state[0], pending=vim_state[1])
+                            emit(type="chord", mods=mods_now(), key=key_name(code), vim=vim_state[0])
                             vim_check_at = time.monotonic() + 0.03
                         else:
                             emit(type="chord", mods=mods_now(), key=key_name(code))

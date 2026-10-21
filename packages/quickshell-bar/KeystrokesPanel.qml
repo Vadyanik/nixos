@@ -24,10 +24,20 @@ PanelWindow {
         next: "󰒭", previous: "󰒮", brightnessdown: "󰃞", brightnessup: "󰃠",
         pause: "󰏤", numlock: "󰎠", scrolllock: "󰌐"
     })
+    // Physical (US) key -> letter on the active layout; evdev reports positions only.
+    readonly property var russian: ({q: "й", w: "ц", e: "у", r: "к", t: "е", y: "н", u: "г", i: "ш", o: "щ", p: "з", "[": "х", "]": "ъ",
+        a: "ф", s: "ы", d: "в", f: "а", g: "п", h: "р", j: "о", k: "л", l: "д", ";": "ж", "'": "э", z: "я", x: "ч", c: "с", v: "м",
+        b: "и", n: "т", m: "ь", ",": "б", ".": "ю", "/": ".", "`": "ё"})
+    readonly property var ukrainian: Object.assign({}, russian, {s: "і", "]": "ї", "'": "є", "`": "'", "\\": "ґ"})
+    readonly property string layoutName: compositor.language || ""
     function glyph(name) {
         if (glyphs[name]) return glyphs[name];
+        if (name.length === 1) {
+            const table = layoutName.startsWith("Russian") ? russian : (layoutName.startsWith("Ukrainian") ? ukrainian : null);
+            if (table && table[name]) return table[name].toUpperCase();
+        }
         if (name.startsWith("kp")) return name.slice(2).toUpperCase();
-        return name.length === 1 ? name.toUpperCase() : name.toUpperCase();
+        return name.toUpperCase();
     }
     function label(chord) {
         const parts = chord.mods.map(glyph);

@@ -197,7 +197,7 @@ ShellRoot {
         function hotkeysStatus(): string { return JSON.stringify({opened: hotkeys.opened, count: hotkeys.entries.length}); }
         function toggleKeystrokes(): void { keystrokes.opened = !keystrokes.opened; }
         function toggleKeystrokesLatin(): void { keystrokes.latinKeys = !keystrokes.latinKeys; }
-        function keystrokesStatus(): string { return JSON.stringify({opened: keystrokes.opened, latinKeys: keystrokes.latinKeys, current: keystrokes.current, history: keystrokes.history}); }
+        function keystrokesStatus(): string { return JSON.stringify({opened: keystrokes.opened, latinKeys: keystrokes.latinKeys, current: keystrokes.current, entries: keystrokes.snapshot()}); }
         function toggleControlCenter(): void {
             if (root.controlOpen || root.notificationsOpen) { root.controlOpen = false; root.notificationsOpen = false; }
             else root.controlOpen = true;
@@ -351,36 +351,80 @@ ShellRoot {
                             leftAction: () => root.run("xdg-open https://alerts.in.ua/")
                             rightAction: () => alert.refresh()
                         }
-                        // Live key echo: the held chord first, then history newest to oldest.
-                        // Keys pressed together touch; separate presses are a space apart.
+                        // Live key echo: the held chord first, then entries newest to oldest.
+                        // Keys pressed together sit close; separate presses are a space apart.
                         // It fills the bar up to the clock; entries that do not fit fade out whole.
                         Item {
                             id: keystrokesBox
                             visible: keystrokes.opened
                             height: 32
-                            clip: true
                             width: Math.max(0, panelContent.width / 2 - Math.max(clockLabel.width, volumeLabel.width) / 2 - 16 - leftRow.anchors.leftMargin - x)
+                            readonly property bool holding: keystrokes.current.mods.length > 0 || keystrokes.current.key !== ""
                             Row {
+                                id: heldRow
                                 height: 32
-                                spacing: 14
-                                Text {
-                                    height: 32
-                                    verticalAlignment: Text.AlignVCenter
-                                    text: keystrokes.current.mods.length || keystrokes.current.key ? keystrokes.label(keystrokes.current) : "󰌌"
-                                    color: keystrokes.current.mods.length || keystrokes.current.key ? root.palette.accent : root.palette.mutedForeground
-                                    font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18; bold: true }
-                                }
+                                spacing: 6
                                 Repeater {
-                                    model: keystrokes.history
+                                    model: keystrokesBox.holding ? keystrokes.parts(keystrokes.current) : ["󰌌"]
                                     Text {
-                                        required property var modelData
-                                        required property int index
+                                        required property string modelData
                                         height: 32
                                         verticalAlignment: Text.AlignVCenter
-                                        text: modelData.text + (modelData.count > 1 ? " ×" + modelData.count : "")
-                                        color: root.palette.foreground
-                                        opacity: x + width <= keystrokesBox.width ? Math.max(0.3, 1 - index * 0.04) : 0
-                                        font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18 }
+                                        text: modelData
+                                        color: keystrokesBox.holding ? root.palette.accent : root.palette.mutedForeground
+                                        font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18; bold: true }
+                                    }
+                                }
+                            }
+                            ListView {
+                                id: keystrokesList
+                                anchors { left: heldRow.right; leftMargin: 14; top: parent.top; bottom: parent.bottom }
+                                width: Math.max(0, keystrokesBox.width - heldRow.width - 14)
+                                orientation: ListView.Horizontal
+                                spacing: 14
+                                clip: true
+                                interactive: false
+                                model: keystrokes.entries
+                                add: Transition {
+                                    ParallelAnimation {
+                                        NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 220 }
+                                        NumberAnimation { property: "x"; from: ViewTransition.destination.x - 28; duration: 220; easing.type: Easing.OutCubic }
+                                    }
+                                }
+                                displaced: Transition { NumberAnimation { property: "x"; duration: 220; easing.type: Easing.OutCubic } }
+                                remove: Transition { NumberAnimation { property: "opacity"; to: 0; duration: 400 } }
+                                delegate: Item {
+                                    id: entry
+                                    required property string parts
+                                    required property int count
+                                    required property int index
+                                    width: entryRow.width
+                                    height: 32
+                                    Row {
+                                        id: entryRow
+                                        height: 32
+                                        spacing: 6
+                                        opacity: entry.x + entry.width <= keystrokesList.width ? Math.max(0.3, 1 - entry.index * 0.04) : 0
+                                        Behavior on opacity { NumberAnimation { duration: 200 } }
+                                        Repeater {
+                                            model: entry.parts.split(keystrokes.separator)
+                                            Text {
+                                                required property string modelData
+                                                height: 32
+                                                verticalAlignment: Text.AlignVCenter
+                                                text: modelData
+                                                color: root.palette.foreground
+                                                font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18 }
+                                            }
+                                        }
+                                        Text {
+                                            visible: entry.count > 1
+                                            height: 32
+                                            verticalAlignment: Text.AlignVCenter
+                                            text: "×" + entry.count
+                                            color: root.palette.mutedForeground
+                                            font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18 }
+                                        }
                                     }
                                 }
                             }

@@ -8,7 +8,7 @@ import Quickshell.Io
 Item {
     id: panel
     required property var compositor
-    property bool opened: false
+    property bool opened: true  // on by default; toggled by clicking its area in the bar
     // Show RU/UA layout keys as the Latin keys they sit on.
     property bool latinKeys: false
     property var current: ({mods: [], key: "", secret: false})
@@ -85,7 +85,7 @@ Item {
         else if (event.type === "chord") push(event);
     }
 
-    onOpenedChanged: if (opened) { entryModel.clear(); current = {mods: [], key: "", secret: false}; }
+    onOpenedChanged: { entryModel.clear(); current = {mods: [], key: "", secret: false}; }
 
     ListModel { id: entryModel }
     // One clock drives every entry's fade and drops the ones past their lifetime.

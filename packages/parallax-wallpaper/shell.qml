@@ -8,6 +8,7 @@ ShellRoot {
     readonly property string share: "@share@"
     property var pointer: ({ x: 0, y: 0 })
     property string wallpaperId: ""
+    property string cursorDebug: "none"
     readonly property var catalog: {
         try { return JSON.parse(catalogFile.text()); }
         catch (error) { return { default: "00004", wallpapers: {} }; }
@@ -105,7 +106,8 @@ ShellRoot {
                     acceptedButtons: Qt.NoButton
                     property real lastX: window.width / 2
                     property real lastY: window.height / 2
-                    onPositionChanged: mouse => { lastX = mouse.x; lastY = mouse.y; }
+                    property int moves: 0
+                    onPositionChanged: mouse => { lastX = mouse.x; lastY = mouse.y; moves++; root.cursorDebug = window.width + "x" + window.height + " " + lastX + "," + lastY + " n=" + moves; }
                 }
                 Neko {
                     sprite: "file://" + root.share + "assets/oneko.gif"
@@ -119,7 +121,7 @@ ShellRoot {
     IpcHandler {
         target: "parallax"
         function status(): string {
-            return JSON.stringify({ wallpaper: root.activeId, x: root.pointer.x, y: root.pointer.y });
+            return JSON.stringify({ cursor: root.cursorDebug, wallpaper: root.activeId, x: root.pointer.x, y: root.pointer.y });
         }
     }
 }

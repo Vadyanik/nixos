@@ -365,7 +365,7 @@ ShellRoot {
                                     required property int index
                                     height: 32
                                     verticalAlignment: Text.AlignVCenter
-                                    text: keystrokes.label(modelData) + (modelData.count > 1 ? " ×" + modelData.count : "")
+                                    text: modelData.text + (modelData.count > 1 ? " ×" + modelData.count : "")
                                     color: root.palette.foreground
                                     opacity: 0.35 + 0.5 * (index + 1) / Math.max(1, keystrokes.history.length)
                                     font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18 }

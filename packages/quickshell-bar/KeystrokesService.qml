@@ -46,14 +46,17 @@ Item {
     }
     // Oldest first: entries fill the bar left to right and the row restarts
     // from the left edge when full, so nothing scrolls sideways.
+    // Entries keep the text rendered when they were typed, so switching
+    // latinKeys later does not rewrite what is already on the bar.
     function push(chord) {
+        const text = label(chord);
         const last = history[history.length - 1];
-        if (last && last.key === chord.key && last.mods.join() === chord.mods.join()) {
+        if (last && last.text === text) {
             // Fold repeats ("A ×3") instead of filling the row.
-            history = history.slice(0, -1).concat([{mods: last.mods, key: last.key, count: last.count + 1}]);
+            history = history.slice(0, -1).concat([{text: text, count: last.count + 1}]);
         } else {
             const base = history.length >= maxHistory ? [] : history;
-            history = base.concat([{mods: chord.mods, key: chord.key, count: 1}]);
+            history = base.concat([{text: text, count: 1}]);
         }
         idle.restart();
     }

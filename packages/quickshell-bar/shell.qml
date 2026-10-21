@@ -369,7 +369,7 @@ ShellRoot {
                         font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18; bold: true }
                     }
                     // Live key echo, leftmost of the right-side modules: keys oldest to newest
-                    // left to right, the held chord last. Keys sit flush; Space ("␣"),
+                    // left to right, the held chord last. Keys sit flush, Space included ("␣");
                     // combinations and folded repeats ("×N") get a gap on both sides. It grows left up to the clock and
                     // entries that no longer fit fade out whole. The area stays clickable when
                     // the echo is off: a left click turns it on or off, a right click switches
@@ -423,7 +423,7 @@ ShellRoot {
                                 required property bool combo
                                 required property int count
                                 required property real born
-                                readonly property int gap: combo || count > 1 || parts === "␣" ? 10 : 0  // on both sides of a combination, a fold or Space
+                                readonly property int gap: combo || count > 1 ? 10 : 0  // on both sides of a combination or a fold
                                 readonly property real fade: Math.max(0, Math.min(1, 1 - (keystrokes.now - born - keystrokes.fadeDelay) / (keystrokes.lifetime - keystrokes.fadeDelay)))
                                 property real fit: x - keystrokesList.contentX >= 0 ? 1 : 0
                                 Behavior on fit { NumberAnimation { duration: 200 } }

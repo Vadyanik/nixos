@@ -67,7 +67,7 @@ Item {
         return result;
     }
     // One continuous stream, newest first: every key is its own entry and
-    // entries sit flush. Space shows as "␣" with a gap on both sides. A combination (two or
+    // entries sit flush. Space shows as "␣". A combination (two or
     // more keys pressed together) is one entry with a gap on both sides. Shift on
     // a character only changes it (n -> N), so that stays a single key.
     // Repeats fold into "×N": combinations and special keys from the second press,

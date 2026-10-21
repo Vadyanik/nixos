@@ -97,6 +97,11 @@ ShellRoot {
                     source: "file://" + root.share + "assets/" + root.activeId + "/front.png"
                     amplitude: root.active.front
                 }
+                Neko {
+                    sprite: "file://" + root.share + "assets/oneko.gif"
+                    targetX: (root.pointer.x + 1) / 2 * window.width
+                    targetY: (root.pointer.y + 1) / 2 * window.height
+                }
             }
         }
     }

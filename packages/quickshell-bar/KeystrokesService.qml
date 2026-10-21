@@ -14,6 +14,11 @@ Item {
     property var current: ({mods: [], key: ""})
     readonly property alias entries: entryModel
     readonly property int maxEntries: 40
+    // Entries stay fully visible for fadeDelay ms, then fade linearly and are
+    // dropped once they are lifetime ms old.
+    readonly property int fadeDelay: 5000
+    readonly property int lifetime: 20000
+    property real now: Date.now()
     readonly property string separator: "\u001f"
     readonly property var glyphs: ({
         super: "\uf313", ctrl: "󰘴", alt: "󰘵", altgr: "󰘵", shift: "󰘶",
@@ -63,12 +68,12 @@ Item {
         const joined = parts(chord).join(separator);
         if (entryModel.count > 0 && entryModel.get(0).parts === joined) {
             entryModel.setProperty(0, "count", entryModel.get(0).count + 1);
+            entryModel.setProperty(0, "born", Date.now());
         } else {
-            entryModel.insert(0, {parts: joined, count: 1});
+            entryModel.insert(0, {parts: joined, count: 1, born: Date.now()});
             if (entryModel.count > maxEntries) entryModel.remove(maxEntries, entryModel.count - maxEntries);
         }
-        idle.restart();
-        drain.stop();
+        now = Date.now();
     }
     function snapshot() {
         return Array.from({length: entryModel.count}, (_, i) => entryModel.get(i).parts.split(separator).join("") + (entryModel.get(i).count > 1 ? " x" + entryModel.get(i).count : ""));
@@ -83,13 +88,16 @@ Item {
     onOpenedChanged: if (opened) { entryModel.clear(); current = {mods: [], key: ""}; }
 
     ListModel { id: entryModel }
-    // After a pause the oldest entries fade out one by one instead of vanishing together.
-    Timer { id: idle; interval: 8000; onTriggered: drain.start() }
+    // One clock drives every entry's fade and drops the ones past their lifetime.
     Timer {
-        id: drain
-        interval: 300
+        interval: 100
         repeat: true
-        onTriggered: entryModel.count > 0 ? entryModel.remove(entryModel.count - 1) : stop()
+        running: entryModel.count > 0
+        onTriggered: {
+            panel.now = Date.now();
+            while (entryModel.count > 0 && panel.now - entryModel.get(entryModel.count - 1).born >= panel.lifetime)
+                entryModel.remove(entryModel.count - 1);
+        }
     }
     Process {
         command: ["python3", Quickshell.shellPath("scripts/keystrokes.py")]

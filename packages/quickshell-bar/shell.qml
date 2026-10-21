@@ -398,6 +398,10 @@ ShellRoot {
                                     required property string parts
                                     required property int count
                                     required property int index
+                                    required property real born
+                                    readonly property real fade: Math.max(0, Math.min(1, 1 - (keystrokes.now - born - keystrokes.fadeDelay) / (keystrokes.lifetime - keystrokes.fadeDelay)))
+                                    property real fit: x + width <= keystrokesList.width ? 1 : 0
+                                    Behavior on fit { NumberAnimation { duration: 200 } }
                                     width: entryRow.width
                                     height: 32
                                     Row {
@@ -407,10 +411,9 @@ ShellRoot {
                                         // Slide in from the left on creation; entry.appear runs 0 -> 1.
                                         property real appear: 0
                                         x: (appear - 1) * 28
-                                        opacity: appear * (entry.x + entry.width <= keystrokesList.width ? Math.max(0.3, 1 - entry.index * 0.04) : 0)
+                                        opacity: appear * entry.fit * entry.fade
                                         Component.onCompleted: appearAnimation.start()
                                         NumberAnimation on appear { id: appearAnimation; running: false; to: 1; duration: 240; easing.type: Easing.OutCubic }
-                                        Behavior on opacity { NumberAnimation { duration: 200 } }
                                         Repeater {
                                             model: entry.parts.split(keystrokes.separator)
                                             Text {

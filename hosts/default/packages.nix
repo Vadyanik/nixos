@@ -210,6 +210,7 @@ in
     qbittorrent
     nvd
     vesktop
+    serie
     # vnix:end
     # Exposes password fields over AT-SPI so the bar's keystroke echo can hide them.
     (chromium.override { commandLineArgs = [ "--force-renderer-accessibility" ]; })

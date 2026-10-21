@@ -364,6 +364,12 @@ ShellRoot {
                                 id: heldRow
                                 height: 32
                                 spacing: 6
+                                // The live chord slides in when a new press starts.
+                                property real appear: 1
+                                x: (appear - 1) * 28
+                                opacity: appear
+                                NumberAnimation on appear { id: heldAppear; running: false; from: 0; to: 1; duration: 240; easing.type: Easing.OutCubic }
+                                Connections { target: keystrokesBox; function onHoldingChanged() { if (keystrokesBox.holding) heldAppear.restart(); } }
                                 Repeater {
                                     model: keystrokesBox.holding ? keystrokes.parts(keystrokes.current) : ["󰌌"]
                                     Text {
@@ -385,12 +391,6 @@ ShellRoot {
                                 clip: true
                                 interactive: false
                                 model: keystrokes.entries
-                                add: Transition {
-                                    ParallelAnimation {
-                                        NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 220 }
-                                        NumberAnimation { property: "x"; from: ViewTransition.destination.x - 28; duration: 220; easing.type: Easing.OutCubic }
-                                    }
-                                }
                                 displaced: Transition { NumberAnimation { property: "x"; duration: 220; easing.type: Easing.OutCubic } }
                                 remove: Transition { NumberAnimation { property: "opacity"; to: 0; duration: 400 } }
                                 delegate: Item {
@@ -404,7 +404,12 @@ ShellRoot {
                                         id: entryRow
                                         height: 32
                                         spacing: 6
-                                        opacity: entry.x + entry.width <= keystrokesList.width ? Math.max(0.3, 1 - entry.index * 0.04) : 0
+                                        // Slide in from the left on creation; entry.appear runs 0 -> 1.
+                                        property real appear: 0
+                                        x: (appear - 1) * 28
+                                        opacity: appear * (entry.x + entry.width <= keystrokesList.width ? Math.max(0.3, 1 - entry.index * 0.04) : 0)
+                                        Component.onCompleted: appearAnimation.start()
+                                        NumberAnimation on appear { id: appearAnimation; running: false; to: 1; duration: 240; easing.type: Easing.OutCubic }
                                         Behavior on opacity { NumberAnimation { duration: 200 } }
                                         Repeater {
                                             model: entry.parts.split(keystrokes.separator)

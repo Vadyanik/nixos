@@ -44,12 +44,16 @@ Item {
         if (chord.key) parts.push(glyph(chord.key));
         return parts.join("  ");
     }
+    // Oldest first: entries fill the bar left to right and the row restarts
+    // from the left edge when full, so nothing scrolls sideways.
     function push(chord) {
-        const last = history[0];
-        history = [{mods: chord.mods, key: chord.key, count: 1}].concat(history).slice(0, maxHistory);
+        const last = history[history.length - 1];
         if (last && last.key === chord.key && last.mods.join() === chord.mods.join()) {
-            // Fold repeats ("A ×3") instead of filling the list.
-            history = [{mods: last.mods, key: last.key, count: last.count + 1}].concat(history.slice(2));
+            // Fold repeats ("A ×3") instead of filling the row.
+            history = history.slice(0, -1).concat([{mods: last.mods, key: last.key, count: last.count + 1}]);
+        } else {
+            const base = history.length >= maxHistory ? [] : history;
+            history = base.concat([{mods: chord.mods, key: chord.key, count: 1}]);
         }
         idle.restart();
     }

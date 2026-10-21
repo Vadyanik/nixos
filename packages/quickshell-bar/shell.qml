@@ -351,7 +351,7 @@ ShellRoot {
                             leftAction: () => root.run("xdg-open https://alerts.in.ua/")
                             rightAction: () => alert.refresh()
                         }
-                        // Live key echo; history runs oldest to newest, the held chord is last.
+                        // Live key echo, left to right: history oldest to newest, the held chord last.
                         Row {
                             id: keystrokesRow
                             visible: keystrokes.opened
@@ -359,7 +359,7 @@ ShellRoot {
                             spacing: 14
                             Text { text: "│"; height: 32; verticalAlignment: Text.AlignVCenter; color: root.palette.separator; font { family: "JetBrainsMonoNL Nerd Font"; pixelSize: 18 } }
                             Repeater {
-                                model: keystrokes.history.slice().reverse()
+                                model: keystrokes.history
                                 Text {
                                     required property var modelData
                                     required property int index

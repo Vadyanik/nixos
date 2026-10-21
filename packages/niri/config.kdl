@@ -12,6 +12,8 @@ input {
     // natural-scroll is disabled by default, matching Hyprland.
     touchpad {}
     mouse {
+        // Flat 1:1 mapping so the wallpaper cat can track the cursor from raw deltas.
+        accel-profile "flat"
         accel-speed 0.0
     }
     focus-follows-mouse max-scroll-amount="0%"
